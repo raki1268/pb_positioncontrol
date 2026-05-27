@@ -70,11 +70,11 @@ sudo venv/bin/python3 -m pymobiledevice3 remote start-tunnel --connection-type u
 Look for output like:
 
 ```
-RSD Address: fd47:a178:a377::1
-RSD Port: 56476
+RSD Address: fdXX:XXXX:XXXX::1
+RSD Port: 5XXXX
 ```
 
-**Keep this terminal open** — closing it kills the tunnel.
+> Both the address and port are randomly generated each time you start the tunnel — your values will differ. **Keep this terminal open** — closing it kills the tunnel.
 
 ### In the browser
 
