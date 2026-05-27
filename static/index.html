@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Pigmax · 位置控制</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root {
+  --bg:         #0d1117;
+  --sidebar:    #161b22;
+  --card:       #21262d;
+  --border:     #30363d;
+  --text:       #c9d1d9;
+  --dim:        #8b949e;
+  --green:      #3fb950;
+  --yellow:     #d29922;
+  --red:        #f85149;
+  --blue:       #58a6ff;
+  --radius:     8px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Header ── */
+header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  height: 48px;
+  background: var(--sidebar);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  z-index: 100;
+}
+header .logo { font-size: 20px; line-height: 1; }
+header h1 { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+.status-row { display: flex; gap: 12px; align-items: center; }
+.badge {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--dim);
+}
+.dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--border);
+  transition: background 0.3s;
+}
+.dot.on  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.dot.warn{ background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+.dot.err { background: var(--red); }
+
+/* ── Body layout ── */
+.body-wrap {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── Sidebar ── */
+aside {
+  width: 300px;
+  min-width: 300px;
+  background: var(--sidebar);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+aside::-webkit-scrollbar { width: 4px; }
+aside::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.section {
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.section-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 10px;
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 5px; padding: 6px 12px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--card); color: var(--text);
+  font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: all .15s;
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--blue); color: var(--blue); }
+.btn.primary { background: var(--green); border-color: var(--green); color: #000; font-weight: 600; }
+.btn.primary:hover { opacity: .85; }
+.btn.danger  { border-color: var(--red); color: var(--red); }
+.btn.danger:hover  { background: var(--red); color: #fff; }
+.btn:disabled { opacity: .4; pointer-events: none; }
+.btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ── Setup section ── */
+.setup-btn-row { display: flex; gap: 6px; }
+.setup-msg {
+  margin-top: 8px; padding: 6px 8px;
+  background: var(--card); border-radius: var(--radius);
+  font-size: 11px; color: var(--dim);
+  word-break: break-all; min-height: 28px;
+  display: none;
+}
+.setup-msg.visible { display: block; }
+.setup-msg.ok { color: var(--green); }
+.setup-msg.err { color: var(--red); }
+
+/* ── Current pos ── */
+.coord-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  font-family: "SF Mono", monospace;
+  font-size: 11px;
+  color: var(--blue);
+  margin-bottom: 8px;
+}
+.coord-label { color: var(--dim); font-size: 10px; margin-bottom: 2px; font-family: sans-serif; }
+
+/* ── Walk progress ── */
+#walk-panel {
+  display: none;
+  background: var(--card);
+  border: 1px solid var(--yellow);
+  border-radius: var(--radius);
+  padding: 10px;
+}
+#walk-panel.active { display: block; }
+.walk-label { font-size: 11px; color: var(--yellow); margin-bottom: 6px; }
+.progress-bar-wrap {
+  background: var(--border);
+  border-radius: 3px;
+  height: 4px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.progress-bar { height: 100%; background: var(--yellow); width: 0%; transition: width .5s linear; }
+
+/* ── Speed slider ── */
+.slider-row { display: flex; align-items: center; gap: 8px; }
+.slider-row label { color: var(--dim); font-size: 11px; white-space: nowrap; }
+input[type=range] {
+  flex: 1;
+  accent-color: var(--green);
+  cursor: pointer;
+}
+#speed-val { color: var(--green); font-weight: 600; min-width: 40px; text-align: right; }
+
+/* ── Saved locations ── */
+#saved-list { display: flex; flex-direction: column; gap: 4px; }
+.loc-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.loc-item:hover { border-color: var(--blue); }
+.loc-icon { font-size: 14px; flex-shrink: 0; }
+.loc-name { flex: 1; font-size: 12px; font-weight: 500; }
+.loc-coords { font-size: 10px; color: var(--dim); font-family: monospace; }
+.loc-del {
+  background: none; border: none; color: var(--dim); font-size: 14px;
+  cursor: pointer; padding: 0 2px; line-height: 1;
+  border-radius: 3px;
+}
+.loc-del:hover { color: var(--red); }
+.loc-empty { color: var(--dim); font-size: 11px; padding: 6px 0; }
+
+/* ── Map ── */
+#map { flex: 1; }
+
+/* ── Popup card (floating over map) ── */
+#action-card {
+  position: absolute;
+  bottom: 28px;
+  right: 16px;
+  left: auto;
+  transform: none;
+  z-index: 500;
+  background: var(--sidebar);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  width: 280px;
+  max-width: calc(100% - 24px);
+  box-shadow: 0 8px 32px #0008;
+  display: none;
+  pointer-events: auto;
+}
+#action-card.visible { display: block; }
+#action-card h3 { font-size: 12px; color: var(--dim); margin-bottom: 4px; }
+#action-card .coords {
+  font-family: monospace; font-size: 13px;
+  color: var(--blue); margin-bottom: 12px;
+}
+#action-card .actions { display: flex; gap: 8px; }
+#action-card .actions .btn { flex: 1; }
+.card-save { margin-top: 8px; display: flex; gap: 6px; }
+.card-save input {
+  flex: 1; background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text); padding: 5px 8px;
+  font-size: 12px; outline: none;
+}
+.card-save input:focus { border-color: var(--blue); }
+
+/* ── Bottom walk progress bar ── */
+#walk-bottom {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 600;
+  background: var(--sidebar);
+  border: 1.5px solid var(--yellow);
+  border-radius: 12px;
+  padding: 12px 16px;
+  width: 380px;
+  max-width: calc(100% - 32px);
+  box-shadow: 0 8px 32px #000a;
+  display: none;
+  animation: walkPulse 2s ease-in-out infinite;
+}
+#walk-bottom.visible { display: block; }
+@keyframes walkPulse {
+  0%, 100% { box-shadow: 0 8px 32px #000a, 0 0 0 0 rgba(210,153,34,.5); }
+  50%      { box-shadow: 0 8px 32px #000a, 0 0 0 8px rgba(210,153,34,0); }
+}
+.wb-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 8px;
+}
+.wb-icon { font-size: 22px; line-height: 1; }
+.wb-text { flex: 1; }
+.wb-title { font-size: 13px; font-weight: 600; color: var(--yellow); }
+.wb-meta {
+  font-size: 11px; color: var(--dim);
+  margin-top: 2px; display: flex; gap: 12px;
+}
+.wb-meta span b { color: var(--text); font-weight: 500; }
+.wb-stop {
+  background: transparent; border: 1px solid var(--red); color: var(--red);
+  border-radius: 6px; padding: 5px 12px; font-size: 11px; cursor: pointer;
+  white-space: nowrap;
+}
+.wb-stop:hover { background: var(--red); color: #fff; }
+.wb-bar-wrap {
+  background: var(--border); border-radius: 3px; height: 5px; overflow: hidden;
+}
+.wb-bar-fill {
+  height: 100%; background: linear-gradient(90deg, var(--green), var(--yellow));
+  width: 0%; transition: width 0.4s linear;
+}
+
+/* ── Toast ── */
+#toast {
+  position: fixed;
+  bottom: 20px; right: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity .3s;
+  pointer-events: none;
+  z-index: 9999;
+  max-width: 280px;
+}
+#toast.show { opacity: 1; }
+#toast.ok   { border-color: var(--green); color: var(--green); }
+#toast.err  { border-color: var(--red);   color: var(--red); }
+
+/* ── Map + action card container ── */
+.map-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="logo">🌱</span>
+  <h1>Pigmax · 位置控制</h1>
+  <div class="status-row">
+    <div class="badge"><div class="dot" id="dot-mount"></div><span>挂载</span></div>
+    <div class="badge"><div class="dot" id="dot-tunnel"></div><span>Tunnel</span></div>
+    <div class="badge"><div class="dot" id="dot-walk" ></div><span id="walk-status-text">空闲</span></div>
+  </div>
+</header>
+
+<div class="body-wrap">
+
+  <!-- ── Sidebar ── -->
+  <aside>
+
+    <!-- Setup -->
+    <div class="section">
+      <div class="section-title">设备初始化</div>
+      <div class="setup-btn-row">
+        <button class="btn" id="btn-mount" onclick="doMount()">① 挂载镜像</button>
+      </div>
+      <div style="margin-top:10px">
+        <div style="font-size:11px;color:var(--dim);margin-bottom:6px">
+          ② 在<b style="color:var(--text)">另一个终端窗口</b>运行：<br>
+          <code style="background:var(--card);padding:3px 6px;border-radius:4px;
+            font-size:11px;color:var(--blue);display:block;margin-top:4px;word-break:break-all">
+            sudo python3 -m pymobiledevice3 remote start-tunnel --connection-type usb
+          </code>
+        </div>
+        <div style="font-size:11px;color:var(--dim);margin-bottom:6px">
+          看到 <code style="color:var(--green)">--rsd HOST PORT</code> 后填入：
+        </div>
+        <div style="display:flex;gap:5px;margin-bottom:5px">
+          <input id="rsd-host" type="text" placeholder="fd7c:..."
+            style="flex:1;background:var(--card);border:1px solid var(--border);
+                   border-radius:var(--radius);color:var(--text);padding:5px 7px;
+                   font-size:11px;font-family:monospace;outline:none;min-width:0;"
+            onfocus="this.style.borderColor='var(--blue)'"
+            onblur="this.style.borderColor='var(--border)'">
+          <input id="rsd-port" type="text" placeholder="PORT"
+            style="width:72px;flex-shrink:0;background:var(--card);border:1px solid var(--border);
+                   border-radius:var(--radius);color:var(--text);padding:5px 7px;
+                   font-size:11px;font-family:monospace;outline:none;"
+            onfocus="this.style.borderColor='var(--blue)'"
+            onblur="this.style.borderColor='var(--border)'">
+        </div>
+        <button class="btn primary" onclick="doSetRsd()" style="width:100%">② 连接 Tunnel</button>
+      </div>
+      <div class="setup-msg" id="setup-msg"></div>
+    </div>
+
+    <!-- Quick coordinate jump -->
+    <div class="section">
+      <div class="section-title">坐标直达</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <input type="text" id="coord-input"
+          placeholder="49.237709, -122.782909"
+          style="flex:1;background:var(--card);border:1px solid var(--border);
+                 border-radius:var(--radius);color:var(--text);padding:6px 9px;
+                 font-size:12px;font-family:monospace;outline:none;"
+          onkeydown="if(event.key==='Enter')goToCoords()"
+          onfocus="this.style.borderColor='var(--blue)'"
+          onblur="this.style.borderColor='var(--border)'">
+        <button class="btn" onclick="goToCoords()">定位</button>
+      </div>
+      <div style="font-size:10px;color:var(--dim);margin-top:4px">
+        支持格式：纬度, 经度（回车或点定位）
+      </div>
+    </div>
+
+    <!-- Current position -->
+    <div class="section">
+      <div class="section-title">当前模拟位置</div>
+      <div class="coord-label">纬度 / 经度</div>
+      <div class="coord-box" id="cur-coords">-- , --</div>
+      <div class="btn-row">
+        <button class="btn" onclick="centerOnCurrent()">在地图上定位</button>
+      </div>
+      <button class="btn danger" id="btn-clear" onclick="doClear()"
+        style="width:100%;margin-top:6px;padding:8px;font-size:13px;font-weight:600;">
+        📍 回到出发点（停止模拟）
+      </button>
+    </div>
+
+    <!-- Speed -->
+    <div class="section">
+      <div class="section-title">步行速度</div>
+      <div class="slider-row">
+        <label>慢走</label>
+        <input type="range" id="speed-slider" min="1" max="12" step="0.5" value="4.5"
+               oninput="document.getElementById('speed-val').textContent=this.value+'km/h'">
+        <span id="speed-val">4.5km/h</span>
+      </div>
+      <div style="font-size:10px;color:var(--dim);margin-top:5px">
+        建议 &le;25 km/h（超速不计入花径）
+      </div>
+    </div>
+
+    <!-- Saved locations -->
+    <div class="section" style="flex:1">
+      <div class="section-title">保存的地点</div>
+      <div id="saved-list"><div class="loc-empty">暂无保存地点，在地图上点击后可添加</div></div>
+    </div>
+
+  </aside>
+
+  <!-- ── Map area ── -->
+  <div class="map-wrap">
+    <div id="map"></div>
+
+    <!-- Floating walk progress bar (bottom of map) -->
+    <div id="walk-bottom">
+      <div class="wb-row">
+        <span class="wb-icon">🚶</span>
+        <div class="wb-text">
+          <div class="wb-title" id="wb-title">步行中</div>
+          <div class="wb-meta">
+            <span>速度 <b id="wb-speed">--</b></span>
+            <span>已走 <b id="wb-walked">0 m</b> / <b id="wb-total">-- m</b></span>
+            <span>剩余 <b id="wb-eta">--</b></span>
+          </div>
+        </div>
+        <button class="wb-stop" onclick="doStop()">停止</button>
+      </div>
+      <div class="wb-bar-wrap"><div class="wb-bar-fill" id="wb-fill"></div></div>
+    </div>
+
+    <!-- Floating action card -->
+    <div id="action-card">
+      <h3>目标地点</h3>
+      <div class="coords" id="card-coords">-- , --</div>
+      <div class="actions">
+        <button class="btn primary" id="btn-teleport" onclick="doTeleport()">⚡ 瞬移</button>
+        <button class="btn" id="btn-walk" onclick="doWalk()">🚶 步行前往</button>
+      </div>
+      <div class="card-save">
+        <input type="text" id="save-name" placeholder="输入地点名称后保存…">
+        <button class="btn" onclick="doSave()">保存</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let targetLat = null, targetLon = null;
+let currentLat = 49.22491703456117, currentLon = -122.96817654417664;
+let walkTotal = null, walkStart = null, walkDist = null, walkSpeed = null;
+let savedLocs = [];
+
+// ── Map init ──────────────────────────────────────────────────────────────────
+const map = L.map('map', { zoomControl: true }).setView([49.22491703456117, -122.96817654417664], 16);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors',
+  maxZoom: 19,
+}).addTo(map);
+
+// Custom icon factory
+function makeIcon(color, emoji) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="
+      background:${color};border:2px solid #fff;border-radius:50% 50% 50% 0;
+      width:28px;height:28px;transform:rotate(-45deg);
+      display:flex;align-items:center;justify-content:center;
+      box-shadow:0 2px 6px #0008;
+    "><span style="transform:rotate(45deg);font-size:13px">${emoji}</span></div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 28],
+  });
+}
+
+const iconCurrent = makeIcon('#58a6ff', '📍');
+const iconTarget  = makeIcon('#f85149', '🎯');
+const iconSaved   = makeIcon('#3fb950', '⭐');
+
+let markerCurrent = L.marker([currentLat, currentLon], { icon: iconCurrent, zIndexOffset: 100 })
+  .addTo(map).bindTooltip('当前位置', { permanent: false });
+let markerTarget = null;
+let savedMarkers = {};
+
+// ── Map click ─────────────────────────────────────────────────────────────────
+map.on('click', e => {
+  const { lat, lng } = e.latlng;
+  setTarget(lat, lng);
+});
+
+function setTarget(lat, lng) {
+  targetLat = lat;
+  targetLon = lng;
+  if (markerTarget) markerTarget.remove();
+  markerTarget = L.marker([lat, lng], { icon: iconTarget }).addTo(map);
+  document.getElementById('card-coords').textContent =
+    `${lat.toFixed(6)},  ${lng.toFixed(6)}`;
+  document.getElementById('action-card').classList.add('visible');
+  document.getElementById('save-name').value = '';
+}
+
+function centerOnCurrent() {
+  map.setView([currentLat, currentLon], 16);
+}
+
+// ── Saved locations ───────────────────────────────────────────────────────────
+async function loadSaved() {
+  const r = await fetch('/api/saved');
+  savedLocs = await r.json();
+  renderSaved();
+}
+
+function renderSaved() {
+  const el = document.getElementById('saved-list');
+  if (!savedLocs.length) {
+    el.innerHTML = '<div class="loc-empty">暂无保存地点，在地图上点击后可添加</div>';
+    Object.values(savedMarkers).forEach(m => m.remove());
+    savedMarkers = {};
+    return;
+  }
+
+  // remove stale markers
+  const names = new Set(savedLocs.map(l => l.name));
+  Object.keys(savedMarkers).forEach(n => {
+    if (!names.has(n)) { savedMarkers[n].remove(); delete savedMarkers[n]; }
+  });
+
+  el.innerHTML = '';
+  savedLocs.forEach(loc => {
+    // marker
+    if (!savedMarkers[loc.name]) {
+      savedMarkers[loc.name] = L.marker([loc.lat, loc.lon], { icon: iconSaved })
+        .addTo(map)
+        .bindTooltip(loc.name, { permanent: false })
+        .on('click', () => setTarget(loc.lat, loc.lon));
+    }
+    // list item
+    const div = document.createElement('div');
+    div.className = 'loc-item';
+    div.innerHTML = `
+      <span class="loc-icon">⭐</span>
+      <div style="flex:1;min-width:0">
+        <div class="loc-name">${esc(loc.name)}</div>
+        <div class="loc-coords">${loc.lat.toFixed(5)}, ${loc.lon.toFixed(5)}</div>
+      </div>
+      <button class="loc-del" onclick="event.stopPropagation();delSaved('${esc(loc.name)}')" title="删除">×</button>`;
+    div.addEventListener('click', () => {
+      setTarget(loc.lat, loc.lon);
+      map.setView([loc.lat, loc.lon], 16);
+    });
+    el.appendChild(div);
+  });
+}
+
+async function doSave() {
+  if (targetLat == null) return;
+  const name = document.getElementById('save-name').value.trim();
+  if (!name) { toast('请输入地点名称', 'err'); return; }
+  const r = await api('/api/saved', 'POST', { name, lat: targetLat, lon: targetLon });
+  if (r.ok) { toast(`已保存「${name}」`, 'ok'); await loadSaved(); }
+}
+
+async function delSaved(name) {
+  await api(`/api/saved/${encodeURIComponent(name)}`, 'DELETE');
+  await loadSaved();
+  toast(`已删除「${name}」`, 'ok');
+}
+
+// ── Setup ─────────────────────────────────────────────────────────────────────
+async function doMount() {
+  setSetupMsg('挂载中，请稍候…', '');
+  setBtnLoading('btn-mount', true);
+  const r = await api('/api/setup/mount', 'POST');
+  setBtnLoading('btn-mount', false);
+  setSetupMsg(r.msg || (r.ok ? '挂载成功' : '挂载失败'), r.ok ? 'ok' : 'err');
+  if (r.ok) setDot('dot-mount', 'on');
+}
+
+async function doSetRsd() {
+  const host = document.getElementById('rsd-host').value.trim();
+  const port = parseInt(document.getElementById('rsd-port').value.trim());
+  if (!host || !port) { toast('请填写 HOST 和 PORT', 'err'); return; }
+  const r = await api('/api/setup/rsd', 'POST', { host, port });
+  if (r.ok) {
+    setDot('dot-tunnel', 'on');
+    setSetupMsg(`Tunnel 已连接：${r.rsd}`, 'ok');
+    toast('Tunnel 连接成功 ✓', 'ok');
+  } else {
+    setSetupMsg('连接失败', 'err');
+  }
+}
+
+// ── Location actions ──────────────────────────────────────────────────────────
+async function doTeleport() {
+  if (targetLat == null) return;
+  const btn = document.getElementById('btn-teleport');
+  btn.disabled = true;
+  btn.textContent = '传送中…';
+  const r = await api('/api/teleport', 'POST', {
+    lat: targetLat, lon: targetLon, speed: getSpeed()
+  });
+  btn.disabled = false;
+  btn.innerHTML = '⚡ 瞬移';
+  if (r.ok) {
+    toast('瞬移成功 ⚡', 'ok');
+    updateCurrentMarker(targetLat, targetLon);
+    document.getElementById('action-card').classList.remove('visible');
+  } else {
+    toast('瞬移失败: ' + r.msg, 'err');
+  }
+}
+
+async function doWalk() {
+  if (targetLat == null) return;
+  const speed = getSpeed();
+  const r = await api('/api/walk', 'POST', {
+    lat: targetLat, lon: targetLon, speed: speed
+  });
+  if (r.ok) {
+    toast(`开始步行，${r.dist}m / ${fmtTime(r.eta)} 🚶`, 'ok');
+    walkTotal = r.eta;
+    walkStart = Date.now();
+    walkDist  = r.dist;
+    walkSpeed = speed;
+    document.getElementById('action-card').classList.remove('visible');
+    showWalkBottom(speed, r.dist, r.eta);
+    startWalkAnimation(currentLat, currentLon, targetLat, targetLon, r.eta);
+  } else {
+    toast('步行启动失败: ' + r.msg, 'err');
+  }
+}
+
+async function doStop() {
+  await api('/api/stop', 'POST');
+  toast('已停止步行', 'ok');
+  walkTotal = null; walkStart = null;
+  document.getElementById('walk-bottom').classList.remove('visible');
+  if (walkAnimFrame) cancelAnimationFrame(walkAnimFrame);
+}
+
+function showWalkBottom(speed, distM, etaSec) {
+  document.getElementById('wb-speed').textContent  = speed + ' km/h';
+  document.getElementById('wb-total').textContent  = distM + ' m';
+  document.getElementById('wb-walked').textContent = '0 m';
+  document.getElementById('wb-eta').textContent    = fmtTime(etaSec);
+  document.getElementById('wb-fill').style.width   = '0%';
+  document.getElementById('walk-bottom').classList.add('visible');
+}
+
+function updateWalkBottom(etaRemaining) {
+  if (walkTotal == null) return;
+  const pct = Math.min(100, ((walkTotal - etaRemaining) / walkTotal) * 100);
+  document.getElementById('wb-fill').style.width = pct + '%';
+  document.getElementById('wb-eta').textContent = fmtTime(Math.round(etaRemaining));
+  if (walkDist != null) {
+    const walked = Math.round(walkDist * (pct / 100));
+    document.getElementById('wb-walked').textContent = walked + ' m';
+  }
+}
+
+async function doClear() {
+  const btn = document.getElementById('btn-clear');
+  btn.disabled = true;
+  const orig = btn.innerHTML;
+  btn.innerHTML = '🛑 正在停止…';
+  const r = await api('/api/clear', 'POST');
+  btn.disabled = false;
+  btn.innerHTML = orig;
+  if (r.ok) {
+    toast('已停止模拟，回到真实位置 ✓', 'ok');
+    // also stop walk if running
+    walkTotal = null; walkStart = null;
+    document.getElementById('walk-bottom').classList.remove('visible');
+  } else {
+    toast('停止失败: ' + (r.msg || '未知错误'), 'err');
+  }
+}
+
+// ── Walk animation (client-side interpolation) ────────────────────────────────
+let walkAnimFrame = null;
+function startWalkAnimation(slat, slon, elat, elon, etaSec) {
+  if (walkAnimFrame) cancelAnimationFrame(walkAnimFrame);
+  const startMs = Date.now();
+  const totalMs = etaSec * 1000;
+  function step() {
+    const elapsed = Date.now() - startMs;
+    const t = Math.min(1, elapsed / totalMs);
+    const lat = slat + (elat - slat) * t;
+    const lng = slon + (elon - slon) * t;
+    markerCurrent.setLatLng([lat, lng]);
+    if (t < 1) walkAnimFrame = requestAnimationFrame(step);
+  }
+  step();
+}
+
+// ── Status polling ────────────────────────────────────────────────────────────
+async function pollStatus() {
+  try {
+    const s = await fetch('/api/status').then(r => r.json());
+    currentLat = s.lat;
+    currentLon = s.lon;
+    document.getElementById('cur-coords').textContent =
+      `${s.lat.toFixed(6)},  ${s.lon.toFixed(6)}`;
+
+    if (!s.walking) {
+      // ensure marker is at true position
+      markerCurrent.setLatLng([s.lat, s.lon]);
+    }
+
+    setDot('dot-tunnel', s.tunnel ? 'on' : '');
+    updateWalkUI(s);
+  } catch (_) { /* server not yet ready */ }
+}
+
+function updateWalkUI(s) {
+  const walkText = document.getElementById('walk-status-text');
+  const walkBottom = document.getElementById('walk-bottom');
+
+  if (s.walking && s.eta != null) {
+    setDot('dot-walk', 'warn');
+    walkText.textContent = `步行 ${fmtTime(Math.round(s.eta))}`;
+    updateWalkBottom(s.eta);
+  } else {
+    setDot('dot-walk', '');
+    walkText.textContent = '空闲';
+    if (walkTotal != null) {
+      // walk just ended naturally → fill to 100% then hide
+      document.getElementById('wb-fill').style.width = '100%';
+      document.getElementById('wb-eta').textContent = '到达 ✓';
+      setTimeout(() => walkBottom.classList.remove('visible'), 1500);
+    }
+    walkTotal = null; walkStart = null; walkDist = null;
+  }
+}
+
+function updateCurrentMarker(lat, lon) {
+  currentLat = lat; currentLon = lon;
+  markerCurrent.setLatLng([lat, lon]);
+  document.getElementById('cur-coords').textContent =
+    `${lat.toFixed(6)},  ${lon.toFixed(6)}`;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+async function api(url, method = 'GET', body = null) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  try {
+    const r = await fetch(url, opts);
+    return await r.json();
+  } catch (e) {
+    return { ok: false, msg: e.message };
+  }
+}
+
+function getSpeed() {
+  return parseFloat(document.getElementById('speed-slider').value);
+}
+
+function fmtTime(sec) {
+  if (sec < 60) return `${sec}秒`;
+  return `${Math.floor(sec / 60)}分${sec % 60}秒`;
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { el.className = ''; }, 2800);
+}
+
+function setDot(id, cls) {
+  document.getElementById(id).className = 'dot ' + cls;
+}
+
+function setSetupMsg(text, cls) {
+  const el = document.getElementById('setup-msg');
+  el.textContent = text;
+  el.className = 'setup-msg visible ' + cls;
+}
+
+function setBtnLoading(id, loading) {
+  const btn = document.getElementById(id);
+  btn.disabled = loading;
+  if (loading) btn.dataset.orig = btn.textContent, btn.textContent = '…';
+  else btn.textContent = btn.dataset.orig;
+}
+
+// ── Coordinate input ──────────────────────────────────────────────────────────
+function goToCoords() {
+  const raw = document.getElementById('coord-input').value.trim();
+  // Accept: "49.213611, -123.045556" or "49.213611 -123.045556"
+  const parts = raw.split(/[\s,]+/).filter(Boolean);
+  if (parts.length < 2) { toast('格式错误，例：49.213611, -123.045556', 'err'); return; }
+  const lat = parseFloat(parts[0]);
+  const lon = parseFloat(parts[1]);
+  if (isNaN(lat) || isNaN(lon)) { toast('坐标无效', 'err'); return; }
+  if (lat < -90 || lat > 90 || lon < -180 || lon > 180) { toast('坐标超出范围', 'err'); return; }
+  map.setView([lat, lon], 17);
+  setTarget(lat, lon);
+  toast(`已定位到 ${lat.toFixed(6)}, ${lon.toFixed(6)}`, 'ok');
+}
+
+// ── Bootstrap ─────────────────────────────────────────────────────────────────
+loadSaved();
+pollStatus();
+setInterval(pollStatus, 2000);
+</script>
+</body>
+</html>

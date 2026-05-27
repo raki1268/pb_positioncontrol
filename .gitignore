@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Personal data — your own saved waypoints
+locations.json
+
+# Editor / IDE
+.claude/
+.vscode/
+.idea/
+*.swp
+
+# Runtime files
+/tmp/
+*.gpx
