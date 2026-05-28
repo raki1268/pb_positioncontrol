@@ -9,9 +9,15 @@
 ## ✨ Features
 
 - 🗺️ **Click-to-relocate** — pick any point on a Leaflet map and the device's reported coordinates jump there instantly
-- 🚶 **Walk simulation** — generate a GPX route with adjustable speed (1–12 km/h) so step counters, route trackers and distance-based UI register a natural-looking journey
-- 📍 **Persistent location lock** — a dedicated `hold_location.py` process keeps the DVT session alive so the system doesn't quietly revert after ~60 s
-- 🛡️ **Watchdog** — monitors the hold process and respawns it automatically if it exits
+- 🚶 **Walk simulation** — generate a smooth route with adjustable speed (1–12 km/h) so step counters, route trackers and distance-based UI register a natural-looking journey
+- 🛤️ **Multi-point routing** — queue multiple waypoints before starting; the device walks each segment in sequence automatically
+  - Confirm with total distance + ETA before executing
+  - Adjust speed at any time mid-route (current segment auto-restarts from current position)
+  - Cancel any remaining waypoint individually; route replans around the rest
+  - Loop detection: if the last waypoint is within 300 m of the first, choose ×1 / ×2 / ×3 / ×5 / ×10 laps
+- 🟡 **Walk trail overlay** — a 300 m-radius exploration fog records everywhere the device has been; 70% transparent, flat and uniform (no opacity banding on overlapping areas)
+- 📍 **Persistent location lock** — a dedicated hold process keeps the DVT session alive so the system doesn't quietly revert after ~60 s
+- 🛡️ **Watchdog** — monitors hold/walk processes and respawns automatically on crash or tunnel hiccup
 - ⭐ **Saved waypoints** — bookmark frequent destinations and recall them in one click
 - 🎯 **Direct coordinate input** — paste a `lat, lon` pair and press Enter
 - 🔁 **One-click restore** — a single button stops the simulation and returns the device to its real GPS reading
@@ -79,10 +85,14 @@ RSD Port: 5XXXX
 ### In the browser
 
 1. Click **① 挂载镜像** (Mount Image) — one-time per device boot
-2. Paste the **RSD Address** + **Port** from Terminal 2 into the input fields, click **② 连接 Tunnel**
+2. Paste the **RSD Address** + **Port** from Terminal 2, click **② 连接 Tunnel**
 3. Click on the map (or paste coordinates in the **坐标直达** box) → an action card appears
-4. Click **⚡ 瞬移** (Teleport) or **🚶 步行前往** (Walk)
-5. To end the session: click **📍 回到出发点 (停止模拟)**
+4. **Single destination**: click **⚡ 瞬移** (Teleport) or **🚶 步行前往** (Walk)
+5. **Multi-point route**: click **+ 加入路线** for each waypoint, then **✓ 确认路线** — the device walks each segment in order
+   - If start ≈ end (≤ 300 m apart), a lap selector appears (×1 / ×2 / ×3 / ×5 / ×10)
+   - Drag the speed slider at any time to change pace; the current segment restarts from the current position
+   - Click **×** next to a queued waypoint to skip it
+6. To end the session: click **📍 回到出发点 (停止模拟)**
 
 ---
 
@@ -94,32 +104,33 @@ RSD Port: 5XXXX
 │  Leaflet + JS    │                    │   (server.py)   │
 └──────────────────┘                    └────────┬────────┘
                                                  │ subprocess
-                                                 ▼
-                                       ┌────────────────────┐
-                                       │ hold_location.py   │
-                                       │ (asyncio DVT loop) │
-                                       └────────┬───────────┘
-                                                │ RSD/TCP
-                                                ▼
-                                       ┌────────────────────┐
-                                       │ pymobiledevice3    │
-                                       │   remote tunnel    │
-                                       └────────┬───────────┘
-                                                │ USB
-                                                ▼
-                                       ┌────────────────────┐
-                                       │     iPhone         │
-                                       │  (DVT Location)    │
-                                       └────────────────────┘
+                                    ┌────────────┴────────────┐
+                                    ▼                         ▼
+                           ┌─────────────────┐    ┌──────────────────┐
+                           │ hold_location.py│    │ walk_location.py │
+                           │ (hold position) │    │ (walk + advance) │
+                           └────────┬────────┘    └────────┬─────────┘
+                                    └──────────┬───────────┘
+                                               │ RSD/TCP
+                                               ▼
+                                      ┌────────────────────┐
+                                      │ pymobiledevice3    │
+                                      │   remote tunnel    │
+                                      └────────┬───────────┘
+                                               │ USB
+                                               ▼
+                                      ┌────────────────────┐
+                                      │     iPhone         │
+                                      │  (DVT Location)    │
+                                      └────────────────────┘
 ```
 
-### Why a separate `hold_location.py`?
+### Process lifecycle
 
-iOS retains the simulated coordinate only while the DVT session is **alive**. The bundled CLI's `simulate-location set` blocks on `signal.sigwait(...)` to keep the session open — once the process exits, the OS reverts within ~60 s.
-
-`hold_location.py` reproduces this behaviour through the Python API and emits a `LOCATION_SET` marker on stdout, letting the server confirm that the coordinate has actually been applied before returning success. It then blocks on a signal until the server terminates it.
-
-A watchdog in `server.py` polls every 10 seconds and respawns the hold process if it exits (tunnel hiccup, USB reseat, etc.).
+- **hold_location.py** — keeps a DVT session alive at a fixed coordinate; emits `LOCATION_SET` on stdout so the server can confirm success before returning. Blocks on a signal until terminated.
+- **walk_location.py** — walks the device from start to end at a constant speed using haversine interpolation. Prints `WALK_START` once connected, `WALK_PROGRESS <pct>` periodically, and `WALK_DONE` on arrival. After arrival it holds the final position and re-asserts every 30 s to prevent drift, until SIGTERM/SIGINT.
+- **Watchdog** (thread in `server.py`) — ticks every 5 s. Detects ETA expiry to auto-advance route segments, samples the interpolated position for the trail overlay, restarts the hold process on crash, and recovers from tunnel hiccups.
+- **Route auto-advance** — when `time.time() > walk_eta + 1 s` and a route is active, the watchdog kills the current walk process and immediately launches the next segment. No client coordination needed.
 
 ---
 
@@ -134,10 +145,10 @@ venv/bin/pip install pymobiledevice3
 ```
 
 ### `Tunnel 不可达` (Tunnel unreachable)
-The `start-tunnel` process is no longer running (closed terminal, Ctrl+C, USB reseat, etc.). Restart it. The new port differs from the old one and must be re-entered in the browser.
+The `start-tunnel` process is no longer running. Restart it. The new port differs from the old one and must be re-entered in the browser.
 
 ### Location applies, then reverts after ~60 s
-The hold process died. Inspect Terminal 1 for `[hold:err]` lines — the most common cause is a stale tunnel; restart Terminal 2.
+The hold process died. Inspect server logs for `[hold:err]` lines — the most common cause is a stale tunnel; restart Terminal 2.
 
 ### `No such option: --tunnel-type`
 Older `pymobiledevice3` releases used a different flag. In 9.x the option is `--connection-type usb`.
@@ -151,11 +162,13 @@ Cosmetic only; can be ignored.
 
 | File | Purpose |
 |---|---|
-| `server.py` | FastAPI backend — REST API, hold/walk lifecycle, watchdog |
-| `hold_location.py` | Standalone async script that keeps the DVT session alive |
-| `static/index.html` | Single-page Leaflet UI |
-| `locations.json` | Personal waypoints (gitignored) |
+| `server.py` | FastAPI backend — REST API, hold/walk/route lifecycle, watchdog |
+| `hold_location.py` | Async script that holds a fixed DVT location until terminated |
+| `walk_location.py` | Async script that walks the device between two coordinates at constant speed |
+| `static/index.html` | Single-page Leaflet UI (click-to-set, walk, multi-point routing, trail overlay) |
+| `locations.json` | Personal saved waypoints (gitignored) |
 | `locations.example.json` | Template — copy to `locations.json` on first run |
+| `walk_path.json` | Auto-generated trail recording (gitignored) |
 
 ---
 

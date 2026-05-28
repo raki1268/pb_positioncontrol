@@ -109,6 +109,8 @@ aside::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; 
 .btn.primary:hover { opacity: .85; }
 .btn.danger  { border-color: var(--red); color: var(--red); }
 .btn.danger:hover  { background: var(--red); color: #fff; }
+.btn.route-add { border-color: #f5d76e; color: #f5d76e; }
+.btn.route-add:hover { background: rgba(245,215,110,.15); }
 .btn:disabled { opacity: .4; pointer-events: none; }
 .btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
 
@@ -168,7 +170,7 @@ input[type=range] {
 #speed-val { color: var(--green); font-weight: 600; min-width: 40px; text-align: right; }
 
 /* ── Saved locations ── */
-#saved-list { display: flex; flex-direction: column; gap: 4px; }
+#saved-list { display: flex; flex-direction: column; gap: 2px; }
 .loc-item {
   display: flex; align-items: center; gap: 6px;
   padding: 6px 8px;
@@ -176,9 +178,12 @@ input[type=range] {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   cursor: pointer;
-  transition: border-color .15s;
+  transition: border-color .15s, opacity .15s;
 }
 .loc-item:hover { border-color: var(--blue); }
+.loc-item.dragging { opacity: .4; }
+.loc-item[draggable=true] { cursor: grab; }
+.loc-item[draggable=true]:active { cursor: grabbing; }
 .loc-icon { font-size: 14px; flex-shrink: 0; }
 .loc-name { flex: 1; font-size: 12px; font-weight: 500; }
 .loc-coords { font-size: 10px; color: var(--dim); font-family: monospace; }
@@ -189,6 +194,116 @@ input[type=range] {
 }
 .loc-del:hover { color: var(--red); }
 .loc-empty { color: var(--dim); font-size: 11px; padding: 6px 0; }
+
+/* Folder headers */
+.folder-header {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 4px 4px;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--dim);
+  cursor: pointer;
+  user-select: none;
+  border-radius: 4px;
+  transition: background .15s, color .15s;
+}
+.folder-header:first-child { margin-top: 0; }
+.folder-header:hover { color: var(--text); }
+.folder-header.drop-hover { background: rgba(88,166,255,.15); color: var(--blue); }
+.folder-header.visited { color: #f4a8c0; }
+.folder-header.visited.drop-hover { background: rgba(255,182,193,.18); color: #ffb6c1; }
+.folder-caret { font-size: 9px; width: 8px; transition: transform .15s; }
+.folder-header.collapsed .folder-caret { transform: rotate(-90deg); }
+.folder-name { flex: 1; font-weight: 600; letter-spacing: .04em; }
+.folder-count {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 1px 6px; font-size: 10px;
+  font-family: monospace;
+}
+.folder-group.collapsed { display: none; }
+.folder-empty {
+  font-size: 10px; color: var(--dim); font-style: italic;
+  padding: 4px 8px; opacity: .6;
+}
+.folder-add-row { display: flex; gap: 4px; margin-top: 8px; }
+.folder-add-row input {
+  flex: 1; background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text); padding: 4px 7px;
+  font-size: 11px; outline: none; min-width: 0;
+}
+.folder-add-row input:focus { border-color: var(--blue); }
+.folder-add-row button {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--dim);
+  font-size: 11px; padding: 4px 8px; cursor: pointer;
+  white-space: nowrap;
+}
+.folder-add-row button:hover { color: var(--blue); border-color: var(--blue); }
+
+/* Top-left map toggle for visited circles */
+.map-toggle {
+  position: absolute;
+  top: 12px;
+  left: 56px;
+  z-index: 500;
+  background: var(--sidebar);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+  box-shadow: 0 2px 8px #0006;
+  display: flex; align-items: center; gap: 6px;
+  user-select: none;
+  transition: border-color .15s, color .15s;
+}
+.map-toggle:hover { border-color: #ffb6c1; }
+.map-toggle.active {
+  border-color: #ffb6c1;
+  color: #ffb6c1;
+  background: rgba(255,182,193,.08);
+}
+.map-toggle .dot-pink {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #ffb6c1; opacity: .4;
+}
+.map-toggle.active .dot-pink { opacity: 1; box-shadow: 0 0 6px #ffb6c1; }
+.map-toggle .dot-yellow {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #f5d76e; opacity: .4;
+}
+.map-toggle.active .dot-yellow { opacity: 1; box-shadow: 0 0 6px #f5d76e; }
+.map-toggle.yellow:hover { border-color: #f5d76e; }
+.map-toggle.yellow.active {
+  border-color: #f5d76e;
+  color: #f5d76e;
+  background: rgba(245,215,110,.08);
+}
+.map-toggle .clear-x {
+  background: none; border: none; color: var(--dim);
+  font-size: 14px; line-height: 1; padding: 0 0 0 4px;
+  cursor: pointer; border-left: 1px solid var(--border);
+  margin-left: 2px;
+}
+.map-toggle .clear-x:hover { color: var(--red); }
+
+/* Mode toggle */
+.mode-row {
+  display: flex; gap: 4px; margin-bottom: 8px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 2px;
+}
+.mode-btn {
+  flex: 1; padding: 5px 8px; font-size: 12px;
+  background: transparent; border: none; color: var(--dim);
+  border-radius: 5px; cursor: pointer; transition: all .15s;
+}
+.mode-btn:hover { color: var(--text); }
+.mode-btn.active {
+  background: var(--sidebar); color: var(--green);
+  font-weight: 600;
+}
 
 /* ── Map ── */
 #map { flex: 1; }
@@ -217,8 +332,8 @@ input[type=range] {
   font-family: monospace; font-size: 13px;
   color: var(--blue); margin-bottom: 12px;
 }
-#action-card .actions { display: flex; gap: 8px; }
-#action-card .actions .btn { flex: 1; }
+#action-card .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+#action-card .actions .btn { flex: 1; min-width: 0; }
 .card-save { margin-top: 8px; display: flex; gap: 6px; }
 .card-save input {
   flex: 1; background: var(--card); border: 1px solid var(--border);
@@ -226,6 +341,80 @@ input[type=range] {
   font-size: 12px; outline: none;
 }
 .card-save input:focus { border-color: var(--blue); }
+
+/* ── Route plan card ── */
+#route-plan-card {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 600;
+  background: var(--sidebar);
+  border: 1.5px solid #f5d76e;
+  border-radius: 12px;
+  padding: 14px 16px;
+  width: 420px;
+  max-width: calc(100% - 32px);
+  box-shadow: 0 8px 32px #000a;
+  display: none;
+}
+#route-plan-card.visible { display: block; }
+.rp-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.rp-title { font-size: 13px; font-weight: 700; color: #f5d76e; }
+.rp-clear {
+  background: none; border: 1px solid var(--border); color: var(--dim);
+  border-radius: 5px; padding: 3px 8px; font-size: 11px; cursor: pointer;
+}
+.rp-clear:hover { border-color: var(--red); color: var(--red); }
+#rp-wp-list { max-height: 160px; overflow-y: auto; margin-bottom: 8px; }
+#rp-wp-list::-webkit-scrollbar { width: 3px; }
+#rp-wp-list::-webkit-scrollbar-thumb { background: var(--border); }
+.rp-wp-item {
+  display: flex; align-items: center; gap: 7px;
+  padding: 4px 2px; font-size: 11px;
+  border-bottom: 1px solid var(--border);
+}
+.rp-wp-item:last-child { border-bottom: none; }
+.rp-wp-num {
+  background: #f5d76e; color: #000;
+  border-radius: 50%; width: 18px; height: 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 10px; flex-shrink: 0;
+}
+.rp-wp-coords { flex: 1; font-family: monospace; color: var(--text); }
+.rp-wp-del {
+  background: none; border: none; color: var(--dim);
+  font-size: 14px; cursor: pointer; padding: 0 2px; line-height: 1;
+}
+.rp-wp-del:hover { color: var(--red); }
+
+/* Loop / lap selector */
+#rp-loop-section {
+  background: rgba(245,215,110,.08);
+  border: 1px solid rgba(245,215,110,.3);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  display: none;
+}
+#rp-loop-section.visible { display: block; }
+.rp-loop-label { font-size: 11px; color: #f5d76e; margin-bottom: 6px; }
+.lap-btns { display: flex; gap: 4px; }
+.lap-btn {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 5px; color: var(--dim);
+  font-size: 11px; font-weight: 600; padding: 4px 10px;
+  cursor: pointer; transition: all .15s;
+}
+.lap-btn:hover { border-color: #f5d76e; color: #f5d76e; }
+.lap-btn.active {
+  background: #f5d76e; border-color: #f5d76e; color: #000;
+}
+
+#rp-meta { font-size: 11px; color: var(--dim); margin-bottom: 10px; }
 
 /* ── Bottom walk progress bar ── */
 #walk-bottom {
@@ -238,7 +427,7 @@ input[type=range] {
   border: 1.5px solid var(--yellow);
   border-radius: 12px;
   padding: 12px 16px;
-  width: 380px;
+  width: 420px;
   max-width: calc(100% - 32px);
   box-shadow: 0 8px 32px #000a;
   display: none;
@@ -274,6 +463,33 @@ input[type=range] {
   height: 100%; background: linear-gradient(90deg, var(--green), var(--yellow));
   width: 0%; transition: width 0.4s linear;
 }
+/* Route queue in walk-bottom */
+#wb-route-section {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  display: none;
+}
+#wb-route-section.visible { display: block; }
+.wb-queue-label { font-size: 10px; color: var(--dim); margin-bottom: 5px; }
+.wb-queue-list { display: flex; flex-direction: column; gap: 3px; }
+.wb-queue-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--dim);
+}
+.wb-queue-num {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 50%; width: 16px; height: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 700; flex-shrink: 0; color: var(--text);
+}
+.wb-queue-coords { flex: 1; font-family: monospace; font-size: 10px; }
+.wb-queue-del {
+  background: none; border: none; color: var(--dim);
+  font-size: 12px; cursor: pointer; padding: 0 2px;
+  border-radius: 3px;
+}
+.wb-queue-del:hover { color: var(--red); }
 
 /* ── Toast ── */
 #toast {
@@ -389,16 +605,20 @@ input[type=range] {
       </button>
     </div>
 
-    <!-- Speed -->
+    <!-- Mode + Speed -->
     <div class="section">
-      <div class="section-title">步行速度</div>
+      <div class="section-title">移动模式</div>
+      <div class="mode-row">
+        <button class="mode-btn active" id="mode-walk"  onclick="setMode('walk')">🚶 散步</button>
+        <button class="mode-btn"        id="mode-drive" onclick="setMode('drive')">🚗 开车</button>
+      </div>
       <div class="slider-row">
-        <label>慢走</label>
+        <label id="speed-min-label">慢走</label>
         <input type="range" id="speed-slider" min="1" max="12" step="0.5" value="4.5"
-               oninput="document.getElementById('speed-val').textContent=this.value+'km/h'">
+               oninput="onSpeedInput(this.value)">
         <span id="speed-val">4.5km/h</span>
       </div>
-      <div style="font-size:10px;color:var(--dim);margin-top:5px">
+      <div id="speed-hint" style="font-size:10px;color:var(--dim);margin-top:5px">
         建议 &le;25 km/h（超速不计入花径）
       </div>
     </div>
@@ -415,6 +635,22 @@ input[type=range] {
   <div class="map-wrap">
     <div id="map"></div>
 
+    <!-- Top-left toggle for "已去" radius overlay -->
+    <div class="map-toggle" id="visited-toggle" onclick="toggleVisitedCircles()"
+         title="显示/隐藏「已去」地点的感应范围">
+      <span class="dot-pink"></span>
+      <span id="visited-toggle-label">已去范围</span>
+    </div>
+
+    <!-- Top-left toggle for walking-path overlay -->
+    <div class="map-toggle yellow" id="path-toggle"
+         style="left: 165px;"
+         title="显示/隐藏 步行/开车 经过的区域（300m）">
+      <span class="dot-yellow" onclick="togglePathCircles()"></span>
+      <span onclick="togglePathCircles()">已走路径</span>
+      <button class="clear-x" title="清空路径记录" onclick="clearPath(event)">×</button>
+    </div>
+
     <!-- Floating walk progress bar (bottom of map) -->
     <div id="walk-bottom">
       <div class="wb-row">
@@ -430,6 +666,32 @@ input[type=range] {
         <button class="wb-stop" onclick="doStop()">停止</button>
       </div>
       <div class="wb-bar-wrap"><div class="wb-bar-fill" id="wb-fill"></div></div>
+      <!-- Route queue section -->
+      <div id="wb-route-section">
+        <div class="wb-queue-label">接下来的目的地：</div>
+        <div class="wb-queue-list" id="wb-queue-list"></div>
+      </div>
+    </div>
+
+    <!-- Route plan card -->
+    <div id="route-plan-card">
+      <div class="rp-header">
+        <span class="rp-title">🗺 路线规划</span>
+        <button class="rp-clear" onclick="clearRoutePlan()">清空</button>
+      </div>
+      <div id="rp-wp-list"></div>
+      <div id="rp-loop-section">
+        <div class="rp-loop-label">🔄 检测到环形路线，选择圈数：</div>
+        <div class="lap-btns">
+          <button class="lap-btn active" data-laps="1" onclick="setRouteLaps(1)">×1</button>
+          <button class="lap-btn" data-laps="2" onclick="setRouteLaps(2)">×2</button>
+          <button class="lap-btn" data-laps="3" onclick="setRouteLaps(3)">×3</button>
+          <button class="lap-btn" data-laps="5" onclick="setRouteLaps(5)">×5</button>
+          <button class="lap-btn" data-laps="10" onclick="setRouteLaps(10)">×10</button>
+        </div>
+      </div>
+      <div id="rp-meta"></div>
+      <button class="btn primary" onclick="confirmRoute()" style="width:100%">✓ 确认出发</button>
     </div>
 
     <!-- Floating action card -->
@@ -438,7 +700,8 @@ input[type=range] {
       <div class="coords" id="card-coords">-- , --</div>
       <div class="actions">
         <button class="btn primary" id="btn-teleport" onclick="doTeleport()">⚡ 瞬移</button>
-        <button class="btn" id="btn-walk" onclick="doWalk()">🚶 步行前往</button>
+        <button class="btn" id="btn-walk" onclick="doWalk()">🚶 步行</button>
+        <button class="btn route-add" id="btn-route-add" onclick="addToRoute()">📍 路线</button>
       </div>
       <div class="card-save">
         <input type="text" id="save-name" placeholder="输入地点名称后保存…">
@@ -458,6 +721,44 @@ let targetLat = null, targetLon = null;
 let currentLat = 49.22491703456117, currentLon = -122.96817654417664;
 let walkTotal = null, walkStart = null, walkDist = null, walkSpeed = null;
 let savedLocs = [];
+
+// Visited circle overlay
+const VISITED_RADIUS_M = 300;
+const VISITED_FOLDER   = '已去';
+let visitedCircles = {};
+let visitedCirclesVisible = false;
+const revealedVisited  = new Set();
+
+// Walk-path canvas overlay
+const PATH_RADIUS_M = 300;
+let pathPoints  = [];
+let pathVisible = false;
+let pathPollHandle = null;
+
+// Route planning state
+let routePlanPoints  = [];   // [{lat, lon}, ...]
+let routePlanMarkers = [];   // L.marker[]
+let routePlanPolyline = null;
+let routePlanLaps    = 1;
+const LOOP_CLOSE_M   = 300;  // threshold to detect a closed loop
+
+// Route active state (during execution)
+let routeActive    = false;
+let routeTotalWP   = 0;
+let lastWalkSegId  = -1;
+
+// Speed-slider modes
+const SPEED_MODES = {
+  walk:  { min: 1,  max: 12, step: 0.5, default: 4.5, label: '慢走',
+           hint: '建议 ≤25 km/h（超速不计入花径）' },
+  drive: { min: 10, max: 30, step: 1,   default: 20,
+           label: '城市', hint: '20 km/h 默认；≤25 km/h 仍计入花径' },
+};
+let currentMode = 'walk';
+
+const collapsedFolders = new Set();
+const customFolders    = new Set();
+let _lastTunnelAlive   = false;
 
 // ── Map init ──────────────────────────────────────────────────────────────────
 const map = L.map('map', { zoomControl: true }).setView([49.22491703456117, -122.96817654417664], 16);
@@ -479,6 +780,21 @@ function makeIcon(color, emoji) {
     "><span style="transform:rotate(45deg);font-size:13px">${emoji}</span></div>`,
     iconSize: [28, 28],
     iconAnchor: [14, 28],
+  });
+}
+
+function makeRouteIcon(num) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="
+      background:#f5d76e;border:2.5px solid #fff;border-radius:50%;
+      width:26px;height:26px;
+      display:flex;align-items:center;justify-content:center;
+      box-shadow:0 2px 8px #0008;
+      font-size:11px;font-weight:700;color:#000;
+    ">${num}</div>`,
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
   });
 }
 
@@ -512,6 +828,16 @@ function centerOnCurrent() {
   map.setView([currentLat, currentLon], 16);
 }
 
+// ── Haversine (client-side) ───────────────────────────────────────────────────
+function haversineClient(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const f1 = lat1 * Math.PI / 180, f2 = lat2 * Math.PI / 180;
+  const df = (lat2 - lat1) * Math.PI / 180;
+  const dl = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(df/2)**2 + Math.cos(f1)*Math.cos(f2)*Math.sin(dl/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
 // ── Saved locations ───────────────────────────────────────────────────────────
 async function loadSaved() {
   const r = await fetch('/api/saved');
@@ -521,46 +847,486 @@ async function loadSaved() {
 
 function renderSaved() {
   const el = document.getElementById('saved-list');
-  if (!savedLocs.length) {
-    el.innerHTML = '<div class="loc-empty">暂无保存地点，在地图上点击后可添加</div>';
-    Object.values(savedMarkers).forEach(m => m.remove());
-    savedMarkers = {};
-    return;
-  }
 
-  // remove stale markers
   const names = new Set(savedLocs.map(l => l.name));
   Object.keys(savedMarkers).forEach(n => {
     if (!names.has(n)) { savedMarkers[n].remove(); delete savedMarkers[n]; }
   });
+  Object.keys(visitedCircles).forEach(n => {
+    if (!names.has(n)) { visitedCircles[n].remove(); delete visitedCircles[n]; }
+  });
+
+  const groups = { '': [], [VISITED_FOLDER]: [] };
+  customFolders.forEach(f => { groups[f] ||= []; });
+  savedLocs.forEach(l => {
+    const f = l.folder || '';
+    (groups[f] ||= []).push(l);
+  });
 
   el.innerHTML = '';
-  savedLocs.forEach(loc => {
-    // marker
-    if (!savedMarkers[loc.name]) {
-      savedMarkers[loc.name] = L.marker([loc.lat, loc.lon], { icon: iconSaved })
-        .addTo(map)
-        .bindTooltip(loc.name, { permanent: false })
-        .on('click', () => setTarget(loc.lat, loc.lon));
-    }
-    // list item
-    const div = document.createElement('div');
-    div.className = 'loc-item';
-    div.innerHTML = `
-      <span class="loc-icon">⭐</span>
-      <div style="flex:1;min-width:0">
-        <div class="loc-name">${esc(loc.name)}</div>
-        <div class="loc-coords">${loc.lat.toFixed(5)}, ${loc.lon.toFixed(5)}</div>
-      </div>
-      <button class="loc-del" onclick="event.stopPropagation();delSaved('${esc(loc.name)}')" title="删除">×</button>`;
-    div.addEventListener('click', () => {
-      setTarget(loc.lat, loc.lon);
-      map.setView([loc.lat, loc.lon], 16);
-    });
-    el.appendChild(div);
+  renderGroup(el, '', '📌', '未分组', groups['']);
+  renderGroup(el, VISITED_FOLDER, '✓', VISITED_FOLDER, groups[VISITED_FOLDER]);
+  Object.keys(groups)
+    .filter(f => f !== '' && f !== VISITED_FOLDER)
+    .sort()
+    .forEach(f => renderGroup(el, f, '📁', f, groups[f]));
+
+  const addRow = document.createElement('div');
+  addRow.className = 'folder-add-row';
+  addRow.innerHTML = `
+    <input type="text" id="new-folder-name" placeholder="新建文件夹…"
+           onkeydown="if(event.key==='Enter')createFolder()">
+    <button onclick="createFolder()">+ 建</button>`;
+  el.appendChild(addRow);
+
+  updateVisitedCircles();
+}
+
+function renderGroup(parent, folderKey, icon, label, items) {
+  items = items || [];
+
+  if (folderKey === '' && items.length === 0) {
+    const dropZone = document.createElement('div');
+    dropZone.className = 'folder-header';
+    dropZone.dataset.folder = '';
+    dropZone.style.opacity = '.5';
+    dropZone.innerHTML = `<span class="folder-caret">▾</span><span class="folder-icon">${icon}</span><span class="folder-name">${label}</span><span class="folder-count">0</span>`;
+    attachDropTarget(dropZone, '');
+    parent.appendChild(dropZone);
+    return;
+  }
+
+  const collapsed = collapsedFolders.has(folderKey);
+  const header = document.createElement('div');
+  header.className = 'folder-header' + (collapsed ? ' collapsed' : '') + (folderKey === VISITED_FOLDER ? ' visited' : '');
+  header.dataset.folder = folderKey;
+  header.innerHTML = `
+    <span class="folder-caret">▾</span>
+    <span class="folder-icon">${icon}</span>
+    <span class="folder-name">${esc(label)}</span>
+    <span class="folder-count">${items.length}</span>`;
+  header.addEventListener('click', () => {
+    if (collapsedFolders.has(folderKey)) collapsedFolders.delete(folderKey);
+    else collapsedFolders.add(folderKey);
+    renderSaved();
+  });
+  attachDropTarget(header, folderKey);
+  parent.appendChild(header);
+
+  const group = document.createElement('div');
+  group.className = 'folder-group' + (collapsed ? ' collapsed' : '');
+  if (items.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'folder-empty';
+    empty.textContent = folderKey === VISITED_FOLDER
+      ? '把去过的地点拖到这里'
+      : '空，拖入地点';
+    group.appendChild(empty);
+  } else {
+    items.forEach(loc => group.appendChild(buildLocItem(loc)));
+  }
+  parent.appendChild(group);
+}
+
+function buildLocItem(loc) {
+  if (!savedMarkers[loc.name]) {
+    savedMarkers[loc.name] = L.marker([loc.lat, loc.lon], { icon: iconSaved })
+      .addTo(map)
+      .bindTooltip(loc.name, { permanent: false })
+      .on('click', () => setTarget(loc.lat, loc.lon));
+  }
+
+  const div = document.createElement('div');
+  div.className = 'loc-item';
+  div.draggable = true;
+  div.dataset.name = loc.name;
+  div.innerHTML = `
+    <span class="loc-icon">${loc.folder === VISITED_FOLDER ? '✓' : '⭐'}</span>
+    <div style="flex:1;min-width:0">
+      <div class="loc-name">${esc(loc.name)}</div>
+      <div class="loc-coords">${loc.lat.toFixed(5)}, ${loc.lon.toFixed(5)}</div>
+    </div>
+    <button class="loc-del" onclick="event.stopPropagation();delSaved('${esc(loc.name)}')" title="删除">×</button>`;
+  div.addEventListener('click', () => {
+    setTarget(loc.lat, loc.lon);
+    map.setView([loc.lat, loc.lon], 16);
+  });
+  div.addEventListener('dragstart', e => {
+    e.dataTransfer.setData('text/plain', loc.name);
+    e.dataTransfer.effectAllowed = 'move';
+    div.classList.add('dragging');
+  });
+  div.addEventListener('dragend', () => div.classList.remove('dragging'));
+  return div;
+}
+
+function attachDropTarget(el, folderKey) {
+  el.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    el.classList.add('drop-hover');
+  });
+  el.addEventListener('dragleave', () => el.classList.remove('drop-hover'));
+  el.addEventListener('drop', e => {
+    e.preventDefault();
+    el.classList.remove('drop-hover');
+    const name = e.dataTransfer.getData('text/plain');
+    if (name) moveLocation(name, folderKey);
   });
 }
 
+async function moveLocation(name, folder) {
+  const loc = savedLocs.find(l => l.name === name);
+  if (!loc) return;
+  const cur = loc.folder || '';
+  if (cur === folder) return;
+  if (folder) loc.folder = folder; else delete loc.folder;
+  renderSaved();
+  const r = await api(`/api/saved/${encodeURIComponent(name)}`, 'PATCH', { folder: folder || null });
+  if (!r.ok) { toast('移动失败', 'err'); await loadSaved(); return; }
+  toast(folder ? `已移到「${folder}」` : '已移回未分组', 'ok');
+}
+
+async function createFolder() {
+  const input = document.getElementById('new-folder-name');
+  const name = (input.value || '').trim();
+  if (!name) return;
+  if (name === '已去' || name === '未分组') { toast('该名称已被占用', 'err'); return; }
+  if (!savedLocs.some(l => l.folder === name)) {
+    customFolders.add(name);
+  }
+  input.value = '';
+  renderSaved();
+}
+
+// ── Visited-radius overlay ────────────────────────────────────────────────────
+function updateVisitedCircles() {
+  savedLocs.forEach(loc => {
+    const shouldHave = loc.folder === VISITED_FOLDER;
+    const existing = visitedCircles[loc.name];
+    if (shouldHave && !existing) {
+      const name = loc.name, lat = loc.lat, lon = loc.lon;
+      const c = L.circle([lat, lon], {
+        radius: VISITED_RADIUS_M,
+        color: '#ff4d8a',
+        weight: 1.5,
+        opacity: 0.85,
+        fillColor: '#ff9ec0',
+        fillOpacity: 0.45,
+        interactive: true,
+        bubblingMouseEvents: false,
+      });
+      c.on('click', e => {
+        L.DomEvent.stopPropagation(e);
+        if (revealedVisited.has(name)) revealedVisited.delete(name);
+        else revealedVisited.add(name);
+        applyVisitedVisibility();
+        setTarget(lat, lon);
+      });
+      visitedCircles[name] = c;
+      if (visitedCirclesVisible) c.addTo(map);
+    } else if (!shouldHave && existing) {
+      existing.remove();
+      delete visitedCircles[loc.name];
+      revealedVisited.delete(loc.name);
+    }
+  });
+  applyVisitedVisibility();
+}
+
+function applyVisitedVisibility() {
+  savedLocs.forEach(loc => {
+    const m = savedMarkers[loc.name];
+    if (!m) return;
+    const isVisited = loc.folder === VISITED_FOLDER;
+    const shouldHide = isVisited && visitedCirclesVisible && !revealedVisited.has(loc.name);
+    if (shouldHide && map.hasLayer(m)) m.remove();
+    else if (!shouldHide && !map.hasLayer(m)) m.addTo(map);
+  });
+}
+
+function toggleVisitedCircles() {
+  visitedCirclesVisible = !visitedCirclesVisible;
+  const btn = document.getElementById('visited-toggle');
+  btn.classList.toggle('active', visitedCirclesVisible);
+  Object.values(visitedCircles).forEach(c => {
+    if (visitedCirclesVisible) c.addTo(map);
+    else c.remove();
+  });
+  revealedVisited.clear();
+  applyVisitedVisibility();
+  const n = Object.keys(visitedCircles).length;
+  if (visitedCirclesVisible && n === 0) {
+    toast('「已去」文件夹还没有地点，把地点拖进去就会画圈', '');
+  } else if (visitedCirclesVisible) {
+    toast(`已隐藏 ${n} 个「已去」地点 — 点圈可显示`, '');
+  }
+}
+
+map.on('click', () => {
+  if (visitedCirclesVisible && revealedVisited.size) {
+    revealedVisited.clear();
+    applyVisitedVisibility();
+  }
+});
+
+// ── 🚶 / 🚗 Mode toggle ──────────────────────────────────────────────────────
+function setMode(mode) {
+  if (!SPEED_MODES[mode]) return;
+  currentMode = mode;
+  const cfg = SPEED_MODES[mode];
+  const slider = document.getElementById('speed-slider');
+  slider.min = cfg.min;
+  slider.max = cfg.max;
+  slider.step = cfg.step;
+  slider.value = cfg.default;
+  document.getElementById('speed-val').textContent = cfg.default + 'km/h';
+  document.getElementById('speed-min-label').textContent = cfg.label;
+  document.getElementById('speed-hint').textContent = cfg.hint;
+  document.getElementById('mode-walk').classList.toggle('active',  mode === 'walk');
+  document.getElementById('mode-drive').classList.toggle('active', mode === 'drive');
+  try { localStorage.setItem('pigmax-mode', mode); } catch (_) {}
+}
+
+function onSpeedInput(val) {
+  document.getElementById('speed-val').textContent = val + 'km/h';
+  // If a route is active, change speed via API (restarts current segment)
+  if (routeActive) {
+    clearTimeout(onSpeedInput._t);
+    onSpeedInput._t = setTimeout(async () => {
+      const r = await api('/api/route', 'PATCH', { speed: parseFloat(val) });
+      if (r.ok) toast(`路线速度已更新为 ${val} km/h`, 'ok');
+    }, 800);
+  }
+}
+
+// ── 🗺 Walk-path overlay (Leaflet canvas renderer) ────────────────────────────
+/*
+ * Uses Leaflet's built-in L.canvas() renderer so every circle is geo-anchored.
+ * Leaflet handles all pan/zoom transforms natively — no manual canvas offset math.
+ * Container-level CSS opacity gives uniform 70% without per-circle stacking.
+ */
+const pathRenderer = L.canvas({ padding: 0.5 });
+let pathCircles = [];
+
+function _renderPathPoints(points) {
+  // Remove circles that no longer exist
+  while (pathCircles.length > points.length) {
+    pathCircles.pop().remove();
+  }
+  // Update existing + add new circles
+  points.forEach((p, i) => {
+    if (i < pathCircles.length) {
+      pathCircles[i].setLatLng([p.lat, p.lon]);
+    } else {
+      pathCircles.push(
+        L.circle([p.lat, p.lon], {
+          radius:      PATH_RADIUS_M,
+          renderer:    pathRenderer,
+          fill:        true,
+          fillColor:   '#f5d76e',
+          fillOpacity: 1.0,
+          stroke:      false,
+        }).addTo(map)
+      );
+    }
+  });
+  // Set uniform opacity on the renderer container
+  if (pathRenderer._container) pathRenderer._container.style.opacity = '0.70';
+}
+
+async function loadPath() {
+  try {
+    const r = await fetch('/api/path');
+    pathPoints = await r.json();
+    if (pathVisible) _renderPathPoints(pathPoints);
+  } catch (_) {}
+}
+
+function togglePathCircles() {
+  pathVisible = !pathVisible;
+  document.getElementById('path-toggle').classList.toggle('active', pathVisible);
+  if (pathVisible) {
+    _renderPathPoints(pathPoints);
+    loadPath();
+    if (!pathPollHandle) pathPollHandle = setInterval(loadPath, 5000);
+    if (pathPoints.length === 0) toast('暂无路径记录——开始步行/开车后会自动记录', '');
+    else toast(`显示 ${pathPoints.length} 个轨迹点`, '');
+  } else {
+    if (pathPollHandle) { clearInterval(pathPollHandle); pathPollHandle = null; }
+    pathCircles.forEach(c => c.remove());
+    pathCircles = [];
+  }
+}
+
+async function clearPath(e) {
+  if (e) e.stopPropagation();
+  if (!confirm('清空所有已走路径记录？此操作不可撤销。')) return;
+  await api('/api/path', 'DELETE');
+  pathPoints = [];
+  pathCircles.forEach(c => c.remove());
+  pathCircles = [];
+  toast('路径已清空', 'ok');
+}
+
+// ── Route planning ────────────────────────────────────────────────────────────
+
+function addToRoute() {
+  if (targetLat == null) return;
+  if (routeActive) { toast('路线进行中，请先停止当前路线', 'err'); return; }
+
+  routePlanPoints.push({ lat: targetLat, lon: targetLon });
+  const idx = routePlanPoints.length;
+  const m = L.marker([targetLat, targetLon], { icon: makeRouteIcon(idx) }).addTo(map);
+  routePlanMarkers.push(m);
+
+  _updateRoutePlanLine();
+  document.getElementById('action-card').classList.remove('visible');
+  renderRoutePlanCard();
+}
+
+function _updateRoutePlanLine() {
+  if (routePlanPolyline) { routePlanPolyline.remove(); routePlanPolyline = null; }
+  if (routePlanPoints.length === 0) return;
+  const pts = [[currentLat, currentLon], ...routePlanPoints.map(p => [p.lat, p.lon])];
+  routePlanPolyline = L.polyline(pts, {
+    color: '#f5d76e', weight: 2.5, dashArray: '7 5', opacity: 0.85,
+  }).addTo(map);
+}
+
+function detectLoop(points) {
+  if (points.length < 2) return false;
+  const first = points[0], last = points[points.length - 1];
+  return haversineClient(first.lat, first.lon, last.lat, last.lon) <= LOOP_CLOSE_M;
+}
+
+function renderRoutePlanCard() {
+  const card  = document.getElementById('route-plan-card');
+  const list  = document.getElementById('rp-wp-list');
+  const loopSec = document.getElementById('rp-loop-section');
+
+  if (routePlanPoints.length === 0) {
+    card.classList.remove('visible');
+    return;
+  }
+
+  // Build waypoint list
+  list.innerHTML = routePlanPoints.map((p, i) => `
+    <div class="rp-wp-item">
+      <span class="rp-wp-num">${i + 1}</span>
+      <span class="rp-wp-coords">${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}</span>
+      <button class="rp-wp-del" onclick="removeRoutePlanPoint(${i})" title="移除">×</button>
+    </div>`).join('');
+
+  // Loop detection
+  const isLoop = detectLoop(routePlanPoints);
+  loopSec.classList.toggle('visible', isLoop);
+  if (!isLoop) routePlanLaps = 1;
+
+  // Stats
+  const activeLaps = isLoop ? routePlanLaps : 1;
+  let totalDist = haversineClient(currentLat, currentLon,
+                                  routePlanPoints[0].lat, routePlanPoints[0].lon);
+  for (let i = 1; i < routePlanPoints.length; i++) {
+    totalDist += haversineClient(routePlanPoints[i-1].lat, routePlanPoints[i-1].lon,
+                                 routePlanPoints[i].lat,   routePlanPoints[i].lon);
+  }
+  const speed   = getSpeed();
+  const etaSec  = totalDist / (speed * 1000 / 3600) * activeLaps;
+  const lapNote = activeLaps > 1 ? ` × ${activeLaps} 圈` : '';
+  document.getElementById('rp-meta').textContent =
+    `共 ${routePlanPoints.length} 个目的地${lapNote} · ${(totalDist * activeLaps / 1000).toFixed(2)} km · 约 ${fmtTime(Math.round(etaSec))}`;
+
+  card.classList.add('visible');
+}
+
+function removeRoutePlanPoint(idx) {
+  routePlanMarkers[idx].remove();
+  routePlanMarkers.splice(idx, 1);
+  routePlanPoints.splice(idx, 1);
+  // Renumber remaining markers
+  routePlanMarkers.forEach((m, i) => m.setIcon(makeRouteIcon(i + 1)));
+  _updateRoutePlanLine();
+  renderRoutePlanCard();
+}
+
+function setRouteLaps(laps) {
+  routePlanLaps = laps;
+  document.querySelectorAll('.lap-btn').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.laps) === laps);
+  });
+  renderRoutePlanCard();
+}
+
+function clearRoutePlan() {
+  routePlanMarkers.forEach(m => m.remove());
+  routePlanMarkers = [];
+  routePlanPoints  = [];
+  routePlanLaps    = 1;
+  if (routePlanPolyline) { routePlanPolyline.remove(); routePlanPolyline = null; }
+  document.getElementById('route-plan-card').classList.remove('visible');
+}
+
+async function confirmRoute() {
+  if (routePlanPoints.length === 0) return;
+  const speed   = getSpeed();
+  const isLoop  = detectLoop(routePlanPoints);
+  const laps    = isLoop ? routePlanLaps : 1;
+
+  const r = await api('/api/route', 'POST', {
+    waypoints: routePlanPoints,
+    speed,
+    laps,
+  });
+
+  if (r.ok) {
+    const total = r.total;
+    toast(`路线出发！共 ${total} 段 🗺`, 'ok');
+    routeActive  = true;
+    routeTotalWP = total;
+    lastWalkSegId = -1;  // force animation restart on next poll
+
+    // Show walk-bottom for route
+    document.getElementById('wb-title').textContent = `路线 1/${total}`;
+    document.getElementById('wb-speed').textContent = speed + ' km/h';
+    document.getElementById('wb-walked').textContent = '0 m';
+    document.getElementById('wb-total').textContent  = r.dist + ' m';
+    document.getElementById('wb-eta').textContent    = fmtTime(r.eta);
+    document.getElementById('wb-fill').style.width   = '0%';
+    document.getElementById('walk-bottom').classList.add('visible');
+    walkTotal = r.eta;
+    walkDist  = r.dist;
+    walkSpeed = speed;
+
+    clearRoutePlan();
+  } else {
+    toast('路线启动失败: ' + r.msg, 'err');
+  }
+}
+
+async function cancelRouteWaypoint(idx) {
+  const r = await api('/api/route', 'PATCH', { remove_idx: idx });
+  if (r.ok) toast('已取消该目的地', 'ok');
+}
+
+function renderRouteQueue(queue, remaining, active) {
+  const sec  = document.getElementById('wb-route-section');
+  const list = document.getElementById('wb-queue-list');
+  if (!active || !queue || queue.length === 0) {
+    sec.classList.remove('visible');
+    return;
+  }
+  sec.classList.add('visible');
+  list.innerHTML = queue.slice(0, 4).map((p, i) => `
+    <div class="wb-queue-item">
+      <span class="wb-queue-num">${i + 2}</span>
+      <span class="wb-queue-coords">${p.lat.toFixed(4)}, ${p.lon.toFixed(4)}</span>
+      <button class="wb-queue-del" onclick="cancelRouteWaypoint(${i})" title="取消">×</button>
+    </div>`).join('') +
+    (queue.length > 4 ? `<div style="font-size:10px;color:var(--dim);padding:3px 0">…还有 ${queue.length - 4} 个</div>` : '');
+}
+
+// ── Saved location actions ────────────────────────────────────────────────────
 async function doSave() {
   if (targetLat == null) return;
   const name = document.getElementById('save-name').value.trim();
@@ -614,6 +1380,8 @@ async function doTeleport() {
     toast('瞬移成功 ⚡', 'ok');
     updateCurrentMarker(targetLat, targetLon);
     document.getElementById('action-card').classList.remove('visible');
+    routeActive = false;
+    clearRoutePlan();
   } else {
     toast('瞬移失败: ' + r.msg, 'err');
   }
@@ -631,6 +1399,7 @@ async function doWalk() {
     walkStart = Date.now();
     walkDist  = r.dist;
     walkSpeed = speed;
+    routeActive = false;
     document.getElementById('action-card').classList.remove('visible');
     showWalkBottom(speed, r.dist, r.eta);
     startWalkAnimation(currentLat, currentLon, targetLat, targetLon, r.eta);
@@ -640,10 +1409,17 @@ async function doWalk() {
 }
 
 async function doStop() {
-  await api('/api/stop', 'POST');
-  toast('已停止步行', 'ok');
+  if (routeActive) {
+    await api('/api/route', 'DELETE');
+    routeActive = false;
+    toast('路线已停止', 'ok');
+  } else {
+    await api('/api/stop', 'POST');
+    toast('已停止步行', 'ok');
+  }
   walkTotal = null; walkStart = null;
   document.getElementById('walk-bottom').classList.remove('visible');
+  document.getElementById('wb-route-section').classList.remove('visible');
   if (walkAnimFrame) cancelAnimationFrame(walkAnimFrame);
 }
 
@@ -677,9 +1453,11 @@ async function doClear() {
   btn.innerHTML = orig;
   if (r.ok) {
     toast('已停止模拟，回到真实位置 ✓', 'ok');
-    // also stop walk if running
     walkTotal = null; walkStart = null;
+    routeActive = false;
+    clearRoutePlan();
     document.getElementById('walk-bottom').classList.remove('visible');
+    document.getElementById('wb-route-section').classList.remove('visible');
   } else {
     toast('停止失败: ' + (r.msg || '未知错误'), 'err');
   }
@@ -712,31 +1490,75 @@ async function pollStatus() {
       `${s.lat.toFixed(6)},  ${s.lon.toFixed(6)}`;
 
     if (!s.walking) {
-      // ensure marker is at true position
       markerCurrent.setLatLng([s.lat, s.lon]);
     }
 
-    setDot('dot-tunnel', s.tunnel ? 'on' : '');
+    // Detect new walk segment (route auto-advanced on the server)
+    if (s.walking && s.walk_seg_id !== lastWalkSegId && s.walk_seg_id > 0) {
+      lastWalkSegId = s.walk_seg_id;
+      if (s.walk_from && s.walk_to && s.walk_total_sec) {
+        const segDist = Math.round(
+          haversineClient(s.walk_from[0], s.walk_from[1], s.walk_to[0], s.walk_to[1]));
+        walkTotal = s.walk_total_sec;
+        walkDist  = segDist;
+        walkSpeed = s.route_speed || getSpeed();
+        const remaining = s.eta || s.walk_total_sec;
+        // Restart animation from current server-reported position
+        startWalkAnimation(s.lat, s.lon, s.walk_to[0], s.walk_to[1], remaining);
+        showWalkBottom(walkSpeed, segDist, s.walk_total_sec);
+      }
+    }
+
+    // Route active — update title
+    if (s.route_active) {
+      routeActive = true;
+      const segNum = routeTotalWP - s.route_remaining;
+      document.getElementById('wb-title').textContent = `路线 ${segNum}/${routeTotalWP}`;
+      renderRouteQueue(s.route_queue, s.route_remaining, true);
+    } else if (routeActive && !s.route_active) {
+      // Route just completed
+      routeActive = false;
+      renderRouteQueue([], 0, false);
+    }
+
+    // Tunnel dot
+    if (!s.tunnel)              setDot('dot-tunnel', '');
+    else if (s.tunnel_alive)    setDot('dot-tunnel', 'on');
+    else                        setDot('dot-tunnel', 'err');
+    if (s.tunnel && !s.tunnel_alive && _lastTunnelAlive) {
+      toast('Tunnel 已断开 ✗ — 重启 start-tunnel 并填新地址', 'err');
+    }
+    _lastTunnelAlive = !!s.tunnel_alive;
     updateWalkUI(s);
   } catch (_) { /* server not yet ready */ }
 }
 
 function updateWalkUI(s) {
-  const walkText = document.getElementById('walk-status-text');
+  const walkText   = document.getElementById('walk-status-text');
   const walkBottom = document.getElementById('walk-bottom');
 
   if (s.walking && s.eta != null) {
     setDot('dot-walk', 'warn');
-    walkText.textContent = `步行 ${fmtTime(Math.round(s.eta))}`;
+    if (s.route_active) {
+      const segNum = routeTotalWP - s.route_remaining;
+      walkText.textContent = `路线 ${segNum}/${routeTotalWP}`;
+    } else {
+      walkText.textContent = `步行 ${fmtTime(Math.round(s.eta))}`;
+      document.getElementById('wb-title').textContent = '步行中';
+    }
     updateWalkBottom(s.eta);
   } else {
     setDot('dot-walk', '');
     walkText.textContent = '空闲';
     if (walkTotal != null) {
-      // walk just ended naturally → fill to 100% then hide
       document.getElementById('wb-fill').style.width = '100%';
       document.getElementById('wb-eta').textContent = '到达 ✓';
-      setTimeout(() => walkBottom.classList.remove('visible'), 1500);
+      if (!s.route_active) {
+        setTimeout(() => {
+          walkBottom.classList.remove('visible');
+          document.getElementById('wb-route-section').classList.remove('visible');
+        }, 1500);
+      }
     }
     walkTotal = null; walkStart = null; walkDist = null;
   }
@@ -802,7 +1624,6 @@ function setBtnLoading(id, loading) {
 // ── Coordinate input ──────────────────────────────────────────────────────────
 function goToCoords() {
   const raw = document.getElementById('coord-input').value.trim();
-  // Accept: "49.213611, -123.045556" or "49.213611 -123.045556"
   const parts = raw.split(/[\s,]+/).filter(Boolean);
   if (parts.length < 2) { toast('格式错误，例：49.213611, -123.045556', 'err'); return; }
   const lat = parseFloat(parts[0]);
@@ -815,7 +1636,12 @@ function goToCoords() {
 }
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
+try {
+  const saved = localStorage.getItem('pigmax-mode');
+  if (saved && SPEED_MODES[saved]) setMode(saved);
+} catch (_) {}
 loadSaved();
+loadPath();
 pollStatus();
 setInterval(pollStatus, 2000);
 </script>
