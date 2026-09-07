@@ -15,6 +15,12 @@
   - Adjust speed at any time mid-route (current segment auto-restarts from current position)
   - Cancel any remaining waypoint individually; route replans around the rest
   - Loop detection: if the last waypoint is within 300 m of the first, choose ×1 / ×2 / ×3 / ×5 / ×10 laps
+- 💾 **Saved routes** — name and store a planned route; it persists in `routes.json` across restarts
+  - Single-click a route in the sidebar to preview it on the map (waypoints, distance, ETA); clicking another route swaps the preview
+  - Double-click to restore it into the route planner, then hit **✓ 确认出发** to run it as-is
+  - Rename, overwrite or delete saved routes; the running route's name shows in the progress bar
+  - Save a route **after** it already started — the progress panel carries its own name field, so a route that was never saved (or failed to save) can still be captured mid-run
+- 📚 **Tabbed library** — the sidebar keeps saved locations and saved routes on two tabs with live counts; the last tab you used is remembered
 - 🟡 **Walk trail overlay** — a 300 m-radius exploration fog records everywhere the device has been; 70% transparent, flat and uniform (no opacity banding on overlapping areas)
 - 📍 **Persistent location lock** — a dedicated hold process keeps the DVT session alive so the system doesn't quietly revert after ~60 s
 - 🛡️ **Watchdog** — monitors hold/walk processes and respawns automatically on crash or tunnel hiccup
@@ -67,6 +73,14 @@ sudo venv/bin/python3 server.py
 
 Open `http://127.0.0.1:3000` in a browser.
 
+If port 3000 is taken, the server prints the port it picked instead. To force a
+specific one, use `--port` or `PORT` (note `sudo` drops the env var unless you
+set it inline):
+
+```bash
+sudo venv/bin/python3 server.py --port 3100
+```
+
 ### Terminal 2 — start the RSD tunnel (required for iOS 17+)
 
 ```bash
@@ -92,7 +106,9 @@ RSD Port: 5XXXX
    - If start ≈ end (≤ 300 m apart), a lap selector appears (×1 / ×2 / ×3 / ×5 / ×10)
    - Drag the speed slider at any time to change pace; the current segment restarts from the current position
    - Click **×** next to a queued waypoint to skip it
-6. To end the session: click **📍 回到出发点 (停止模拟)**
+6. **Save a route**: with waypoints queued, type a name in the plan card and click **💾 保存路线**
+   - Later, single-click the entry under **保存的路线** to preview it, double-click to load it back, then **✓ 确认出发**
+7. To end the session: click **📍 回到出发点 (停止模拟)**
 
 ---
 
@@ -156,6 +172,10 @@ Older `pymobiledevice3` releases used a different flag. In 9.x the option is `--
 ### Browser shows `Failed to load resource: 3000/favicon.ico` 404
 Cosmetic only; can be ignored.
 
+### `[Errno 48] address already in use`
+Another process holds the port. Find it with `lsof -nP -iTCP:3000 -sTCP:LISTEN`,
+then either stop it or start the server on a different port (see above).
+
 ---
 
 ## 📁 File map
@@ -168,6 +188,7 @@ Cosmetic only; can be ignored.
 | `static/index.html` | Single-page Leaflet UI (click-to-set, walk, multi-point routing, trail overlay) |
 | `locations.json` | Personal saved waypoints (gitignored) |
 | `locations.example.json` | Template — copy to `locations.json` on first run |
+| `routes.json` | Personal saved routes (gitignored, auto-created) |
 | `walk_path.json` | Auto-generated trail recording (gitignored) |
 
 ---

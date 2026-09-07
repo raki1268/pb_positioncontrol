@@ -416,6 +416,152 @@ input[type=range] {
 
 #rp-meta { font-size: 11px; color: var(--dim); margin-bottom: 10px; }
 
+/* ── Route save row (inside plan card) ── */
+.rp-save-row { display: flex; gap: 6px; margin-bottom: 8px; }
+.rp-save-row input {
+  flex: 1; min-width: 0;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text);
+  padding: 5px 8px; font-size: 12px; outline: none;
+}
+.rp-save-row input:focus { border-color: #f5d76e; }
+.rp-save-row button {
+  background: var(--card); border: 1px solid #f5d76e; color: #f5d76e;
+  border-radius: var(--radius); font-size: 11px; padding: 4px 10px;
+  cursor: pointer; white-space: nowrap;
+}
+.rp-save-row button:hover { background: rgba(245,215,110,.15); }
+
+/* ── Saved routes (sidebar) ── */
+#routes-list { display: flex; flex-direction: column; gap: 3px; }
+.route-item {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 2.5px solid rgba(245,215,110,.45);
+  border-radius: var(--radius);
+  cursor: pointer;
+  user-select: none;
+  transition: border-color .15s, background .15s;
+}
+.route-item:hover { border-color: #f5d76e; border-left-color: #f5d76e; }
+.route-item.previewing {
+  border-color: #f5d76e; border-left-color: #f5d76e;
+  background: rgba(245,215,110,.12);
+}
+.route-item.running { border-color: var(--green); border-left-color: var(--green); }
+.route-icon { font-size: 14px; flex-shrink: 0; }
+.route-body { flex: 1; min-width: 0; }
+.route-name {
+  font-size: 12px; font-weight: 500;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.route-meta { font-size: 10px; color: var(--dim); font-family: monospace; margin-top: 1px; }
+.route-btn {
+  background: none; border: none; color: var(--dim);
+  font-size: 13px; cursor: pointer; padding: 0 2px; line-height: 1;
+  border-radius: 3px; flex-shrink: 0;
+}
+.route-btn:hover { color: var(--blue); }
+.route-btn.del:hover { color: var(--red); }
+.route-empty { color: var(--dim); font-size: 11px; padding: 6px 0; line-height: 1.6; }
+
+/* ── Library tabs (saved locations / saved routes) ── */
+.lib-tabs {
+  display: flex; gap: 4px; margin-bottom: 10px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 2px;
+}
+.lib-tab {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 5px 6px; font-size: 12px;
+  background: transparent; border: none; color: var(--dim);
+  border-radius: 5px; cursor: pointer; transition: all .15s;
+}
+.lib-tab:hover { color: var(--text); }
+.lib-tab.active { background: var(--sidebar); color: var(--green); font-weight: 600; }
+.lib-count {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 9px; padding: 0 5px;
+  font-size: 9px; font-family: monospace; color: var(--dim);
+}
+.lib-tab.active .lib-count { color: var(--green); border-color: var(--green); }
+.lib-hint { font-size: 10px; color: var(--dim); margin-top: 7px; line-height: 1.6; }
+
+/* ── Save-while-running row (inside walk-bottom) ── */
+#wb-save-section {
+  margin-top: 10px; padding-top: 8px;
+  border-top: 1px solid var(--border);
+  display: none;
+}
+#wb-save-section.visible { display: block; }
+.wb-save-row { display: flex; gap: 6px; align-items: center; }
+.wb-save-row input {
+  flex: 1; min-width: 0;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text);
+  padding: 5px 8px; font-size: 12px; outline: none;
+}
+.wb-save-row input:focus { border-color: #f5d76e; }
+.wb-save-row button {
+  background: var(--card); border: 1px solid #f5d76e; color: #f5d76e;
+  border-radius: var(--radius); font-size: 11px; padding: 5px 10px;
+  cursor: pointer; white-space: nowrap;
+}
+.wb-save-row button:hover { background: rgba(245,215,110,.15); }
+.wb-save-label { font-size: 10px; color: var(--dim); margin-bottom: 5px; }
+
+/* ── Route preview card (over map, top-right) ── */
+#route-preview-card {
+  position: absolute;
+  top: 12px; right: 16px;
+  z-index: 600;
+  width: 260px;
+  max-width: calc(100% - 32px);
+  background: var(--sidebar);
+  border: 1.5px solid #f5d76e;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 8px 32px #000a;
+  display: none;
+}
+#route-preview-card.visible { display: block; }
+.rv-header {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
+}
+.rv-title {
+  flex: 1; min-width: 0;
+  font-size: 13px; font-weight: 700; color: #f5d76e;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rv-close {
+  background: none; border: none; color: var(--dim);
+  font-size: 16px; line-height: 1; cursor: pointer; padding: 0 2px;
+}
+.rv-close:hover { color: var(--red); }
+.rv-meta { font-size: 11px; color: var(--dim); line-height: 1.6; margin-bottom: 8px; }
+.rv-meta b { color: var(--text); font-weight: 500; }
+#rv-wp-list {
+  max-height: 132px; overflow-y: auto;
+  margin-bottom: 9px; padding-right: 2px;
+}
+#rv-wp-list::-webkit-scrollbar { width: 3px; }
+#rv-wp-list::-webkit-scrollbar-thumb { background: var(--border); }
+.rv-wp-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 10px; color: var(--dim); padding: 2px 0;
+  font-family: monospace;
+}
+.rv-wp-num {
+  background: var(--card); border: 1px solid var(--border); color: var(--text);
+  border-radius: 50%; width: 16px; height: 16px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 700; font-family: sans-serif;
+}
+.rv-actions { display: flex; gap: 6px; }
+.rv-actions .btn { flex: 1; min-width: 0; font-size: 11px; padding: 6px 8px; }
+
 /* ── Bottom walk progress bar ── */
 #walk-bottom {
   position: absolute;
@@ -490,6 +636,53 @@ input[type=range] {
   border-radius: 3px;
 }
 .wb-queue-del:hover { color: var(--red); }
+
+/* ── Advanced params & blind guide panels ── */
+.adv-collapse-title {
+  cursor: pointer; user-select: none;
+  display: flex; align-items: center; gap: 5px;
+}
+.adv-collapse-caret {
+  font-size: 9px; transition: transform .15s; flex-shrink: 0;
+}
+.adv-badge {
+  margin-left: auto;
+  font-size: 9px; padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--card); border: 1px solid var(--border);
+  color: var(--dim);
+  transition: color .2s, border-color .2s;
+}
+.adv-badge.active { color: var(--green); border-color: var(--green); }
+.adv-param-row { margin-bottom: 9px; }
+.adv-param-label {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 3px;
+}
+.adv-param-label span:first-child { font-size: 11px; color: var(--dim); }
+.adv-param-val { font-size: 11px; font-family: monospace; }
+.adv-hint-box {
+  font-size: 10px; color: var(--dim);
+  padding: 5px 7px; margin-bottom: 9px;
+  background: var(--card); border-radius: 5px; border: 1px solid var(--border);
+  line-height: 1.5;
+}
+
+/* Blind guide steps */
+.blind-step {
+  display: flex; gap: 8px; padding: 6px 0;
+  font-size: 11px; color: var(--text); line-height: 1.5;
+  border-bottom: 1px solid var(--border); align-items: flex-start;
+}
+.blind-step:last-of-type { border-bottom: none; }
+.blind-step-num {
+  flex-shrink: 0; font-size: 12px; font-weight: 700;
+  color: var(--yellow); width: 18px; padding-top: 1px;
+}
+.blind-timer-display {
+  text-align: center; font-size: 26px; font-weight: 700;
+  font-family: monospace; color: var(--yellow); margin-top: 8px;
+}
 
 /* ── Toast ── */
 #toast {
@@ -609,24 +802,136 @@ input[type=range] {
     <div class="section">
       <div class="section-title">移动模式</div>
       <div class="mode-row">
-        <button class="mode-btn active" id="mode-walk"  onclick="setMode('walk')">🚶 散步</button>
-        <button class="mode-btn"        id="mode-drive" onclick="setMode('drive')">🚗 开车</button>
+        <button class="mode-btn"        id="mode-walk"  onclick="setMode('walk')">🚶 散步</button>
+        <button class="mode-btn active" id="mode-drive" onclick="setMode('drive')">🚗 开车</button>
       </div>
       <div class="slider-row">
-        <label id="speed-min-label">慢走</label>
-        <input type="range" id="speed-slider" min="1" max="12" step="0.5" value="4.5"
+        <label id="speed-min-label">城市</label>
+        <input type="range" id="speed-slider" min="10" max="30" step="1" value="20"
                oninput="onSpeedInput(this.value)">
-        <span id="speed-val">4.5km/h</span>
+        <span id="speed-val">20km/h</span>
       </div>
       <div id="speed-hint" style="font-size:10px;color:var(--dim);margin-top:5px">
-        建议 &le;25 km/h（超速不计入花径）
+        20 km/h 默认；&le;25 km/h 仍计入花径
       </div>
     </div>
 
-    <!-- Saved locations -->
+    <!-- Advanced injection params (Feature 1) -->
+    <div class="section" id="adv-params-section">
+      <div class="section-title adv-collapse-title" onclick="toggleAdvParams()">
+        <span class="adv-collapse-caret" id="adv-caret">▾</span>
+        高级注入参数
+        <span class="adv-badge" id="adv-badge">基础模式</span>
+      </div>
+      <div id="adv-params-body">
+        <div class="adv-hint-box">
+          升级 DVT 注入为 7 参数 Payload（含海拔 + 精度硬锁），设备不支持时自动降级到双坐标模式。
+        </div>
+        <div class="adv-param-row">
+          <div class="adv-param-label">
+            <span>海拔 Altitude</span>
+            <span class="adv-param-val" id="adv-alt-val" style="color:var(--blue)">0.0 m</span>
+          </div>
+          <input type="range" id="adv-alt" min="-50" max="500" step="0.5" value="0.0"
+                 oninput="document.getElementById('adv-alt-val').textContent=parseFloat(this.value).toFixed(1)+' m'"
+                 style="width:100%;accent-color:var(--blue)">
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--dim);margin-top:1px">
+            <span>-50 m</span><span style="font-style:italic">沿海点位推荐 0 ~ 3 m</span><span>500 m</span>
+          </div>
+        </div>
+        <div class="adv-param-row">
+          <div class="adv-param-label">
+            <span>水平精度 H.Accuracy</span>
+            <span class="adv-param-val" id="adv-hacc-val" style="color:var(--green)">5.0 m</span>
+          </div>
+          <input type="range" id="adv-hacc" min="1" max="65" step="0.5" value="5.0"
+                 oninput="document.getElementById('adv-hacc-val').textContent=parseFloat(this.value).toFixed(1)+' m'"
+                 style="width:100%;accent-color:var(--green)">
+        </div>
+        <div class="adv-param-row">
+          <div class="adv-param-label">
+            <span>垂直精度 V.Accuracy</span>
+            <span class="adv-param-val" id="adv-vacc-val" style="color:var(--green)">5.0 m</span>
+          </div>
+          <input type="range" id="adv-vacc" min="1" max="65" step="0.5" value="5.0"
+                 oninput="document.getElementById('adv-vacc-val').textContent=parseFloat(this.value).toFixed(1)+' m'"
+                 style="width:100%;accent-color:var(--green)">
+        </div>
+        <div class="adv-hint-box" style="margin-bottom:9px">
+          静止瞬移：自动注入 Speed=0.0 / Course=−1.0（静止）<br>
+          步行路线：Speed/Course 由系统从坐标变化推算
+        </div>
+        <button class="btn primary" onclick="saveAdvParams()" style="width:100%;font-size:12px">
+          应用高级参数
+        </button>
+      </div>
+    </div>
+
+    <!-- Saved locations / routes library -->
     <div class="section" style="flex:1">
-      <div class="section-title">保存的地点</div>
-      <div id="saved-list"><div class="loc-empty">暂无保存地点，在地图上点击后可添加</div></div>
+      <div class="section-title">收藏库</div>
+      <div class="lib-tabs">
+        <button class="lib-tab active" id="lib-tab-locs" onclick="setLibTab('locs')">
+          ⭐ 地点 <span class="lib-count" id="lib-count-locs">0</span>
+        </button>
+        <button class="lib-tab" id="lib-tab-routes" onclick="setLibTab('routes')">
+          🗺 路线 <span class="lib-count" id="lib-count-routes">0</span>
+        </button>
+      </div>
+
+      <div id="lib-pane-locs">
+        <div id="saved-list"><div class="loc-empty">暂无保存地点，在地图上点击后可添加</div></div>
+      </div>
+
+      <div id="lib-pane-routes" style="display:none">
+        <div id="routes-list"></div>
+        <div class="lib-hint">
+          单击 = 预览 · 双击 = 载入路线规划<br>载入后点「确认出发」即可开始
+        </div>
+      </div>
+    </div>
+
+    <!-- Blind zone reset guide (Feature 2) -->
+    <div class="section" style="border-bottom:none">
+      <div class="section-title adv-collapse-title" onclick="toggleBlindGuide()">
+        <span class="adv-collapse-caret" id="blind-caret">▾</span>
+        盲区重置向导
+      </div>
+      <div id="blind-guide-body">
+        <div class="adv-hint-box">
+          用于强防高地无法交互时，强制清空 App 内残留的基站 / WLAN 定位缓存。<br>
+          请先确保<b style="color:var(--green)">注入正常（绿灯亮）</b>再执行以下步骤。
+        </div>
+        <div class="blind-step">
+          <span class="blind-step-num">①</span>
+          <span>保持本页面运行，当前高级注入持续有效（不要关闭或停止）</span>
+        </div>
+        <div class="blind-step">
+          <span class="blind-step-num">②</span>
+          <span>手机：<b>设置 → 隐私与安全性 → 定位服务 → 游戏 App</b>，将权限改为 <b style="color:var(--red)">永不</b></span>
+        </div>
+        <div class="blind-step">
+          <span class="blind-step-num">③</span>
+          <span>让 App 在无位置权限的状态下保持前台 / 后台运行 <b style="color:var(--yellow)">10 – 15 秒</b>（强制熔断基站缓存）</span>
+        </div>
+        <div class="blind-step">
+          <span class="blind-step-num">④</span>
+          <span>改回 <b style="color:var(--green)">始终允许</b> 并开启 <b style="color:var(--green)">精准位置</b></span>
+        </div>
+        <div class="blind-step">
+          <span class="blind-step-num">⑤</span>
+          <span>立即切回 App，在 <b style="color:var(--blue)">2 – 3 秒内</b>完成目标交互（抢占 CoreLocation 苏醒窗口）</span>
+        </div>
+        <button class="btn" id="blind-timer-btn" onclick="startBlindTimer()"
+                style="width:100%;margin-top:10px;border-color:var(--yellow);color:var(--yellow)">
+          ⏱ 开始 12 秒计时（步骤 ③ 辅助）
+        </button>
+        <div class="blind-timer-display" id="blind-timer-display" style="display:none"></div>
+        <div id="blind-rehold-status"
+             style="display:none;margin-top:6px;padding:5px 8px;border-radius:5px;
+                    font-size:11px;background:var(--card);border:1px solid var(--border);
+                    text-align:center;font-family:monospace"></div>
+      </div>
     </div>
 
   </aside>
@@ -671,6 +976,29 @@ input[type=range] {
         <div class="wb-queue-label">接下来的目的地：</div>
         <div class="wb-queue-list" id="wb-queue-list"></div>
       </div>
+      <!-- Save the running route (in case it wasn't saved before starting) -->
+      <div id="wb-save-section">
+        <div class="wb-save-label" id="wb-save-label">保存这条路线，下次可直接双击恢复：</div>
+        <div class="wb-save-row">
+          <input type="text" id="wb-save-name" placeholder="路线名称…"
+                 onkeydown="if(event.key==='Enter')saveRunningRoute()">
+          <button onclick="saveRunningRoute()">💾 保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Saved route preview card -->
+    <div id="route-preview-card">
+      <div class="rv-header">
+        <span class="rv-title" id="rv-title">路线预览</span>
+        <button class="rv-close" onclick="clearRoutePreview()" title="关闭预览">×</button>
+      </div>
+      <div class="rv-meta" id="rv-meta"></div>
+      <div id="rv-wp-list"></div>
+      <div class="rv-actions">
+        <button class="btn" onclick="loadRouteToPlan(previewRouteName)">✎ 载入</button>
+        <button class="btn primary" onclick="startSavedRoute(previewRouteName)">▶ 出发</button>
+      </div>
     </div>
 
     <!-- Route plan card -->
@@ -691,6 +1019,11 @@ input[type=range] {
         </div>
       </div>
       <div id="rp-meta"></div>
+      <div class="rp-save-row">
+        <input type="text" id="rp-save-name" placeholder="路线名称…"
+               onkeydown="if(event.key==='Enter')saveCurrentRoute()">
+        <button onclick="saveCurrentRoute()">💾 保存路线</button>
+      </div>
       <button class="btn primary" onclick="confirmRoute()" style="width:100%">✓ 确认出发</button>
     </div>
 
@@ -741,6 +1074,7 @@ let routePlanMarkers = [];   // L.marker[]
 let routePlanPolyline = null;
 let routePlanLaps    = 1;
 const LOOP_CLOSE_M   = 300;  // threshold to detect a closed loop
+const AUTO_TP_M      = 5000; // lead-in beyond this teleports to the start instead of driving
 
 // Route active state (during execution)
 let routeActive    = false;
@@ -754,7 +1088,7 @@ const SPEED_MODES = {
   drive: { min: 10, max: 30, step: 1,   default: 20,
            label: '城市', hint: '20 km/h 默认；≤25 km/h 仍计入花径' },
 };
-let currentMode = 'walk';
+let currentMode = 'drive';
 
 const collapsedFolders = new Set();
 const customFolders    = new Set();
@@ -880,6 +1214,7 @@ function renderSaved() {
   el.appendChild(addRow);
 
   updateVisitedCircles();
+  updateLibCounts();
 }
 
 function renderGroup(parent, folderKey, icon, label, items) {
@@ -1071,7 +1406,7 @@ map.on('click', () => {
 });
 
 // ── 🚶 / 🚗 Mode toggle ──────────────────────────────────────────────────────
-function setMode(mode) {
+function setMode(mode, speedVal) {
   if (!SPEED_MODES[mode]) return;
   currentMode = mode;
   const cfg = SPEED_MODES[mode];
@@ -1079,13 +1414,20 @@ function setMode(mode) {
   slider.min = cfg.min;
   slider.max = cfg.max;
   slider.step = cfg.step;
-  slider.value = cfg.default;
-  document.getElementById('speed-val').textContent = cfg.default + 'km/h';
+  const speed = (speedVal != null && !isNaN(speedVal)) ? speedVal : cfg.default;
+  slider.value = speed;
+  document.getElementById('speed-val').textContent = slider.value + 'km/h';
   document.getElementById('speed-min-label').textContent = cfg.label;
   document.getElementById('speed-hint').textContent = cfg.hint;
   document.getElementById('mode-walk').classList.toggle('active',  mode === 'walk');
   document.getElementById('mode-drive').classList.toggle('active', mode === 'drive');
   try { localStorage.setItem('pigmax-mode', mode); } catch (_) {}
+}
+
+function setSpeedValue(val) {
+  const slider = document.getElementById('speed-slider');
+  slider.value = val;
+  document.getElementById('speed-val').textContent = slider.value + 'km/h';
 }
 
 function onSpeedInput(val) {
@@ -1263,31 +1605,64 @@ function clearRoutePlan() {
   routePlanMarkers = [];
   routePlanPoints  = [];
   routePlanLaps    = 1;
+  planRouteName    = null;
+  const nameInput = document.getElementById('rp-save-name');
+  if (nameInput) nameInput.value = '';
   if (routePlanPolyline) { routePlanPolyline.remove(); routePlanPolyline = null; }
   document.getElementById('route-plan-card').classList.remove('visible');
 }
 
+// A saved route starts wherever the phone currently is, so a route on the other
+// side of the world would otherwise "drive" there first. Jump to the start instead.
+async function ensureAtRouteStart(first) {
+  if (currentLat == null || currentLon == null) return true;
+  const gap = haversineClient(currentLat, currentLon, first.lat, first.lon);
+  if (gap < AUTO_TP_M) return true;
+
+  const pretty = gap >= 1000 ? `${(gap / 1000).toFixed(1)} km` : `${Math.round(gap)} m`;
+  toast(`距起点 ${pretty}，先瞬移过去…`, 'ok');
+  const r = await api('/api/teleport', 'POST', { lat: first.lat, lon: first.lon, speed: getSpeed() });
+  if (!r.ok) {
+    toast('瞬移到起点失败: ' + (r.msg || '未知错误'), 'err');
+    return false;
+  }
+  updateCurrentMarker(first.lat, first.lon);
+  if (routePlanPoints.length) {
+    fitRouteBounds(routePlanPoints.map(p => [p.lat, p.lon]), true);
+  }
+  toast('已到达起点 ⚡', 'ok');
+  return true;
+}
+
 async function confirmRoute() {
   if (routePlanPoints.length === 0) return;
+  if (!await ensureAtRouteStart(routePlanPoints[0])) return;
   const speed   = getSpeed();
   const isLoop  = detectLoop(routePlanPoints);
   const laps    = isLoop ? routePlanLaps : 1;
 
+  const startedName = planRouteName;
+  const startedWps  = routePlanPoints.map(p => ({ lat: p.lat, lon: p.lon }));
   const r = await api('/api/route', 'POST', {
     waypoints: routePlanPoints,
     speed,
     laps,
+    name: startedName,
   });
 
   if (r.ok) {
     const total = r.total;
-    toast(`路线出发！共 ${total} 段 🗺`, 'ok');
+    toast(startedName ? `路线「${startedName}」出发！共 ${total} 段 🗺`
+                      : `路线出发！共 ${total} 段 🗺`, 'ok');
+    runningRouteName = startedName;
+    activeRoute = { name: startedName, waypoints: startedWps, speed, laps, mode: currentMode };
     routeActive  = true;
     routeTotalWP = total;
     lastWalkSegId = -1;  // force animation restart on next poll
 
     // Show walk-bottom for route
-    document.getElementById('wb-title').textContent = `路线 1/${total}`;
+    document.getElementById('wb-title').textContent =
+      (startedName ? `${startedName} ` : '路线 ') + `1/${total}`;
     document.getElementById('wb-speed').textContent = speed + ' km/h';
     document.getElementById('wb-walked').textContent = '0 m';
     document.getElementById('wb-total').textContent  = r.dist + ' m';
@@ -1298,7 +1673,9 @@ async function confirmRoute() {
     walkDist  = r.dist;
     walkSpeed = speed;
 
+    clearRoutePreview();
     clearRoutePlan();
+    renderRoutes();
   } else {
     toast('路线启动失败: ' + r.msg, 'err');
   }
@@ -1307,6 +1684,30 @@ async function confirmRoute() {
 async function cancelRouteWaypoint(idx) {
   const r = await api('/api/route', 'PATCH', { remove_idx: idx });
   if (r.ok) toast('已取消该目的地', 'ok');
+}
+
+function updateRunningSaveRow(s) {
+  const sec   = document.getElementById('wb-save-section');
+  const input = document.getElementById('wb-save-name');
+  const label = document.getElementById('wb-save-label');
+  if (!s.route_active) {
+    sec.classList.remove('visible');
+    updateRunningSaveRow._lastName = undefined;
+    return;
+  }
+  sec.classList.add('visible');
+
+  // Prefill (and refresh) the name only when the running route changes, never
+  // while the user is typing in the field.
+  const name = s.route_name || '';
+  if (updateRunningSaveRow._lastName !== name && document.activeElement !== input) {
+    updateRunningSaveRow._lastName = name;
+    input.value = name;
+  }
+  const known = savedRoutes.some(r => r.name === name);
+  label.textContent = name && known
+    ? `这条路线已保存为「${name}」— 改动后可再次保存覆盖：`
+    : '保存这条路线，下次可直接双击恢复：';
 }
 
 function renderRouteQueue(queue, remaining, active) {
@@ -1324,6 +1725,322 @@ function renderRouteQueue(queue, remaining, active) {
       <button class="wb-queue-del" onclick="cancelRouteWaypoint(${i})" title="取消">×</button>
     </div>`).join('') +
     (queue.length > 4 ? `<div style="font-size:10px;color:var(--dim);padding:3px 0">…还有 ${queue.length - 4} 个</div>` : '');
+}
+
+// ── 📚 Library tabs (saved locations / saved routes) ──────────────────────────
+let libTab = 'locs';
+
+function setLibTab(tab) {
+  libTab = (tab === 'routes') ? 'routes' : 'locs';
+  document.getElementById('lib-pane-locs').style.display   = libTab === 'locs'   ? '' : 'none';
+  document.getElementById('lib-pane-routes').style.display = libTab === 'routes' ? '' : 'none';
+  document.getElementById('lib-tab-locs').classList.toggle('active',   libTab === 'locs');
+  document.getElementById('lib-tab-routes').classList.toggle('active', libTab === 'routes');
+  try { localStorage.setItem('pigmax-lib-tab', libTab); } catch (_) {}
+}
+
+function updateLibCounts() {
+  document.getElementById('lib-count-locs').textContent   = savedLocs.length;
+  document.getElementById('lib-count-routes').textContent = savedRoutes.length;
+}
+
+// ── 💾 Saved routes ───────────────────────────────────────────────────────────
+/*
+ * Routes live in routes.json on the server, so they survive restarts exactly
+ * like saved locations. Sidebar interaction: single click previews a route on
+ * the map (previewing another one drops the previous preview), double click
+ * restores it into the editable route plan so 「确认出发」 starts it right away.
+ */
+let savedRoutes        = [];
+let previewRouteName   = null;   // route currently drawn as a preview
+let previewLayers      = [];     // Leaflet layers belonging to that preview
+let planRouteName      = null;   // saved route the current plan came from
+let runningRouteName   = null;   // saved route the server is currently walking
+let activeRoute        = null;   // {waypoints, speed, laps, mode} of the running route
+let lastStatus         = null;   // most recent /api/status payload
+let _routeClickTimer   = null;   // click/dblclick disambiguation
+
+function makePreviewIcon(num) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="
+      background:#58a6ff;border:2.5px solid #fff;border-radius:50%;
+      width:24px;height:24px;
+      display:flex;align-items:center;justify-content:center;
+      box-shadow:0 2px 8px #0008;
+      font-size:10px;font-weight:700;color:#000;
+    ">${num}</div>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+  });
+}
+
+function modeForSpeed(speed, prefer) {
+  const v = parseFloat(speed);
+  if (isNaN(v)) return (prefer && SPEED_MODES[prefer]) ? prefer : currentMode;
+  if (prefer && SPEED_MODES[prefer]) {
+    const cfg = SPEED_MODES[prefer];
+    if (v >= cfg.min && v <= cfg.max) return prefer;
+  }
+  return v > SPEED_MODES.walk.max ? 'drive' : 'walk';
+}
+
+function routeLegLength(points) {
+  let d = 0;
+  for (let i = 1; i < points.length; i++) {
+    d += haversineClient(points[i-1].lat, points[i-1].lon, points[i].lat, points[i].lon);
+  }
+  return d;
+}
+
+async function loadRoutes() {
+  try {
+    const r = await fetch('/api/routes');
+    savedRoutes = await r.json();
+  } catch (_) { savedRoutes = []; }
+  renderRoutes();
+}
+
+function renderRoutes() {
+  const el = document.getElementById('routes-list');
+  el.innerHTML = '';
+
+  updateLibCounts();
+
+  if (savedRoutes.length === 0) {
+    el.innerHTML = '<div class="route-empty">暂无保存路线。<br>在地图上点「📍 路线」加点后，于路线规划卡片里命名保存；<br>路线已经出发了也能在进度条里补存。</div>';
+    return;
+  }
+
+  savedRoutes.forEach(rt => {
+    const laps  = rt.laps > 1 ? ` ×${rt.laps}圈` : '';
+    const dist  = routeLegLength(rt.waypoints) * (rt.laps > 1 ? rt.laps : 1);
+    const item  = document.createElement('div');
+    item.className = 'route-item'
+      + (previewRouteName === rt.name ? ' previewing' : '')
+      + (runningRouteName === rt.name ? ' running'    : '');
+    item.dataset.name = rt.name;
+    item.title = '单击预览 · 双击载入';
+    item.innerHTML = `
+      <span class="route-icon">${runningRouteName === rt.name ? '▶' : '🗺'}</span>
+      <div class="route-body">
+        <div class="route-name">${esc(rt.name)}</div>
+        <div class="route-meta">${rt.waypoints.length} 点${laps} · ${(dist/1000).toFixed(2)}km · ${rt.speed}km/h</div>
+      </div>
+      <button class="route-btn rename" title="重命名">✎</button>
+      <button class="route-btn del" title="删除">×</button>`;
+
+    item.querySelector('.rename').addEventListener('click', e => {
+      e.stopPropagation();
+      renameRoute(rt.name);
+    });
+    item.querySelector('.del').addEventListener('click', e => {
+      e.stopPropagation();
+      delRoute(rt.name);
+    });
+    item.addEventListener('click', () => {
+      clearTimeout(_routeClickTimer);
+      _routeClickTimer = setTimeout(() => previewRoute(rt.name), 220);
+    });
+    item.addEventListener('dblclick', () => {
+      clearTimeout(_routeClickTimer);
+      loadRouteToPlan(rt.name);
+    });
+
+    el.appendChild(item);
+  });
+}
+
+function clearRoutePreview() {
+  previewLayers.forEach(l => l.remove());
+  previewLayers    = [];
+  previewRouteName = null;
+  document.getElementById('route-preview-card').classList.remove('visible');
+  renderRoutes();
+}
+
+// Frame a route on the map. The current position is only worth including when we
+// are actually going to drive there from it; past AUTO_TP_M we teleport, so pulling
+// the far-away current position into the bounds would just zoom out to a world map.
+function fitRouteBounds(latlngs, autoTp) {
+  const bounds = L.latLngBounds(latlngs);
+  if (!autoTp) bounds.extend([currentLat, currentLon]);
+  map.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
+}
+
+function previewRoute(name) {
+  const rt = savedRoutes.find(r => r.name === name);
+  if (!rt) return;
+
+  // Clicking the route that is already previewing closes the preview
+  const wasPreviewing = previewRouteName === name;
+  clearRoutePreview();
+  if (wasPreviewing) return;
+
+  previewRouteName = name;
+
+  const pts = rt.waypoints;
+  pts.forEach((p, i) => {
+    const m = L.marker([p.lat, p.lon], { icon: makePreviewIcon(i + 1) })
+      .addTo(map)
+      .bindTooltip(`${rt.name} · 第 ${i + 1} 个目的地`, { permanent: false });
+    previewLayers.push(m);
+  });
+
+  const leadIn = haversineClient(currentLat, currentLon, pts[0].lat, pts[0].lon);
+  const autoTp = leadIn >= AUTO_TP_M;   // confirmRoute() will jump to the start
+
+  // Solid line = the saved route itself; dashed lead-in = from current position.
+  // Skip the lead-in when it will be teleported away — it is not a leg we drive.
+  previewLayers.push(L.polyline(pts.map(p => [p.lat, p.lon]), {
+    color: '#58a6ff', weight: 3, opacity: 0.9,
+  }).addTo(map));
+  if (!autoTp) {
+    previewLayers.push(L.polyline([[currentLat, currentLon], [pts[0].lat, pts[0].lon]], {
+      color: '#58a6ff', weight: 2, opacity: 0.55, dashArray: '5 6',
+    }).addTo(map));
+  }
+
+  const laps      = rt.laps > 1 ? rt.laps : 1;
+  const legDist   = routeLegLength(pts);
+  const totalDist = (autoTp ? 0 : leadIn) + legDist * laps;
+  const etaSec    = totalDist / ((rt.speed || 20) * 1000 / 3600);
+  const leadTxt   = leadIn >= 1000 ? `${(leadIn / 1000).toFixed(1)} km` : `${Math.round(leadIn)} m`;
+
+  document.getElementById('rv-title').textContent = rt.name;
+  document.getElementById('rv-meta').innerHTML =
+    `<b>${pts.length}</b> 个目的地${laps > 1 ? ` · <b>${laps}</b> 圈` : ''} · ${rt.mode === 'drive' ? '🚗 开车' : '🚶 散步'}<br>` +
+    `全程 <b>${(totalDist/1000).toFixed(2)} km</b> · ${rt.speed} km/h · 约 <b>${fmtTime(Math.round(etaSec))}</b><br>` +
+    `距起点 <b>${leadTxt}</b>` + (autoTp ? ' · 出发时自动 ⚡ 瞬移过去' : '');
+  document.getElementById('rv-wp-list').innerHTML = pts.map((p, i) => `
+    <div class="rv-wp-item">
+      <span class="rv-wp-num">${i + 1}</span>
+      <span>${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}</span>
+    </div>`).join('');
+  document.getElementById('route-preview-card').classList.add('visible');
+
+  fitRouteBounds(pts.map(p => [p.lat, p.lon]), autoTp);
+
+  renderRoutes();
+}
+
+function loadRouteToPlan(name) {
+  const rt = savedRoutes.find(r => r.name === name);
+  if (!rt) return;
+  if (routeActive) { toast('路线进行中，请先停止当前路线', 'err'); return; }
+
+  clearRoutePreview();
+  clearRoutePlan();
+
+  // Restore speed mode + speed exactly as saved (the mode must fit the speed,
+  // otherwise the slider would silently clamp it)
+  setMode(modeForSpeed(rt.speed, rt.mode), rt.speed);
+
+  routePlanPoints = rt.waypoints.map(p => ({ lat: p.lat, lon: p.lon }));
+  routePlanPoints.forEach((p, i) => {
+    routePlanMarkers.push(L.marker([p.lat, p.lon], { icon: makeRouteIcon(i + 1) }).addTo(map));
+  });
+  routePlanLaps = detectLoop(routePlanPoints) ? Math.max(1, rt.laps || 1) : 1;
+  setRouteLaps(routePlanLaps);
+  planRouteName = rt.name;
+  document.getElementById('rp-save-name').value = rt.name;
+
+  _updateRoutePlanLine();
+  renderRoutePlanCard();
+
+  const leadIn = haversineClient(currentLat, currentLon,
+                                 routePlanPoints[0].lat, routePlanPoints[0].lon);
+  fitRouteBounds(routePlanPoints.map(p => [p.lat, p.lon]), leadIn >= AUTO_TP_M);
+
+  toast(`已载入「${rt.name}」— 点「确认出发」开始`, 'ok');
+}
+
+async function startSavedRoute(name) {
+  loadRouteToPlan(name);
+  if (routePlanPoints.length) await confirmRoute();
+}
+
+async function saveCurrentRoute() {
+  if (routePlanPoints.length === 0) { toast('路线为空，先在地图上添加目的地', 'err'); return; }
+  const input = document.getElementById('rp-save-name');
+  const name  = (input.value || planRouteName || '').trim();
+  if (!name) { toast('请输入路线名称', 'err'); input.focus(); return; }
+  if (savedRoutes.some(r => r.name === name) && name !== planRouteName) {
+    if (!confirm(`已存在同名路线「${name}」，覆盖它？`)) return;
+  }
+
+  const laps = detectLoop(routePlanPoints) ? routePlanLaps : 1;
+  const r = await api('/api/routes', 'POST', {
+    name,
+    waypoints: routePlanPoints,
+    speed: getSpeed(),
+    laps,
+    mode: currentMode,
+  });
+  if (r.ok) {
+    planRouteName = name;
+    await loadRoutes();
+    setLibTab('routes');
+    toast(r.replaced ? `已更新路线「${name}」💾` : `已保存路线「${name}」💾`, 'ok');
+  } else {
+    toast('保存失败: ' + (r.msg || '未知错误'), 'err');
+  }
+}
+
+async function saveRunningRoute() {
+  // Waypoints come from the server when it knows them, else from what this page
+  // sent when the route started — so a mid-run save works either way.
+  const wps = (lastStatus && lastStatus.route_wps && lastStatus.route_wps.length)
+    ? lastStatus.route_wps
+    : (activeRoute && activeRoute.waypoints) || [];
+  if (!wps.length) { toast('拿不到当前路线的途经点，无法保存', 'err'); return; }
+
+  const input = document.getElementById('wb-save-name');
+  const name  = (input.value || runningRouteName || '').trim();
+  if (!name) { toast('请输入路线名称', 'err'); input.focus(); return; }
+  if (savedRoutes.some(r => r.name === name) && name !== runningRouteName) {
+    if (!confirm(`已存在同名路线「${name}」，覆盖它？`)) return;
+  }
+
+  const laps = (lastStatus && lastStatus.route_laps)
+    || (activeRoute && activeRoute.laps) || 1;
+  const speed = (lastStatus && lastStatus.route_speed)
+    || (activeRoute && activeRoute.speed) || getSpeed();
+  const mode = modeForSpeed(speed, (activeRoute && activeRoute.mode) || currentMode);
+
+  const r = await api('/api/routes', 'POST', { name, waypoints: wps, speed, laps, mode });
+  if (!r.ok) { toast('保存失败: ' + (r.msg || '未知错误'), 'err'); return; }
+
+  // Label the running route so the progress bar and the list agree
+  runningRouteName = name;
+  if (activeRoute) activeRoute.name = name;
+  await api('/api/route', 'PATCH', { name });
+  await loadRoutes();
+  setLibTab('routes');
+  toast(r.replaced ? `已更新路线「${name}」💾` : `已保存路线「${name}」💾`, 'ok');
+}
+
+async function renameRoute(name) {
+  const next = (prompt('新的路线名称：', name) || '').trim();
+  if (!next || next === name) return;
+  const r = await api(`/api/routes/${encodeURIComponent(name)}`, 'PATCH', { name: next });
+  if (!r.ok) { toast('重命名失败: ' + (r.msg || ''), 'err'); return; }
+  if (previewRouteName === name) previewRouteName = next;
+  if (planRouteName === name) {
+    planRouteName = next;
+    document.getElementById('rp-save-name').value = next;
+  }
+  await loadRoutes();
+  toast(`已重命名为「${next}」`, 'ok');
+}
+
+async function delRoute(name) {
+  if (!confirm(`删除路线「${name}」？`)) return;
+  await api(`/api/routes/${encodeURIComponent(name)}`, 'DELETE');
+  if (previewRouteName === name) clearRoutePreview();
+  if (planRouteName === name) planRouteName = null;
+  await loadRoutes();
+  toast(`已删除路线「${name}」`, 'ok');
 }
 
 // ── Saved location actions ────────────────────────────────────────────────────
@@ -1412,6 +2129,7 @@ async function doStop() {
   if (routeActive) {
     await api('/api/route', 'DELETE');
     routeActive = false;
+    activeRoute = null;
     toast('路线已停止', 'ok');
   } else {
     await api('/api/stop', 'POST');
@@ -1484,6 +2202,7 @@ function startWalkAnimation(slat, slon, elat, elon, etaSec) {
 async function pollStatus() {
   try {
     const s = await fetch('/api/status').then(r => r.json());
+    lastStatus = s;
     currentLat = s.lat;
     currentLon = s.lon;
     document.getElementById('cur-coords').textContent =
@@ -1513,13 +2232,20 @@ async function pollStatus() {
     if (s.route_active) {
       routeActive = true;
       const segNum = routeTotalWP - s.route_remaining;
-      document.getElementById('wb-title').textContent = `路线 ${segNum}/${routeTotalWP}`;
+      document.getElementById('wb-title').textContent =
+        (s.route_name ? `${s.route_name} ` : '路线 ') + `${segNum}/${routeTotalWP}`;
       renderRouteQueue(s.route_queue, s.route_remaining, true);
     } else if (routeActive && !s.route_active) {
       // Route just completed
       routeActive = false;
       renderRouteQueue([], 0, false);
     }
+    if ((s.route_name || null) !== runningRouteName) {
+      runningRouteName = s.route_active ? (s.route_name || null) : null;
+      renderRoutes();
+    }
+    if (!s.route_active) activeRoute = null;
+    updateRunningSaveRow(s);
 
     // Tunnel dot
     if (!s.tunnel)              setDot('dot-tunnel', '');
@@ -1635,13 +2361,138 @@ function goToCoords() {
   toast(`已定位到 ${lat.toFixed(6)}, ${lon.toFixed(6)}`, 'ok');
 }
 
+// ── Advanced injection params (Feature 1) ────────────────────────────────────
+let _advParamsCollapsed = false;
+
+function toggleAdvParams() {
+  _advParamsCollapsed = !_advParamsCollapsed;
+  document.getElementById('adv-params-body').style.display = _advParamsCollapsed ? 'none' : '';
+  document.getElementById('adv-caret').style.transform = _advParamsCollapsed ? 'rotate(-90deg)' : '';
+}
+
+async function saveAdvParams() {
+  const altitude    = parseFloat(document.getElementById('adv-alt').value);
+  const h_accuracy  = parseFloat(document.getElementById('adv-hacc').value);
+  const v_accuracy  = parseFloat(document.getElementById('adv-vacc').value);
+  const r = await api('/api/advanced-params', 'POST', { altitude, h_accuracy, v_accuracy });
+  if (r.ok) {
+    _setAdvBadgeActive(true);
+    toast(`高级参数已应用 · Alt=${altitude}m  H=${h_accuracy}m  V=${v_accuracy}m`, 'ok');
+  } else {
+    toast('保存失败', 'err');
+  }
+}
+
+function _setAdvBadgeActive(active) {
+  const badge = document.getElementById('adv-badge');
+  if (active) {
+    badge.textContent = '全参数';
+    badge.classList.add('active');
+  } else {
+    badge.textContent = '基础模式';
+    badge.classList.remove('active');
+  }
+}
+
+async function loadAdvParams() {
+  try {
+    const r = await fetch('/api/advanced-params').then(res => res.json());
+    document.getElementById('adv-alt').value   = r.altitude;
+    document.getElementById('adv-alt-val').textContent = r.altitude.toFixed(1) + ' m';
+    document.getElementById('adv-hacc').value  = r.h_accuracy;
+    document.getElementById('adv-hacc-val').textContent = r.h_accuracy.toFixed(1) + ' m';
+    document.getElementById('adv-vacc').value  = r.v_accuracy;
+    document.getElementById('adv-vacc-val').textContent = r.v_accuracy.toFixed(1) + ' m';
+  } catch (_) {}
+}
+
+// ── Blind zone reset guide (Feature 2) ───────────────────────────────────────
+let _blindGuideCollapsed = false;
+let _blindTimerInterval  = null;
+
+function toggleBlindGuide() {
+  _blindGuideCollapsed = !_blindGuideCollapsed;
+  document.getElementById('blind-guide-body').style.display = _blindGuideCollapsed ? 'none' : '';
+  document.getElementById('blind-caret').style.transform = _blindGuideCollapsed ? 'rotate(-90deg)' : '';
+}
+
+function startBlindTimer() {
+  if (_blindTimerInterval) {
+    clearInterval(_blindTimerInterval);
+    _blindTimerInterval = null;
+  }
+  let remaining = 12;
+  const btn     = document.getElementById('blind-timer-btn');
+  const display = document.getElementById('blind-timer-display');
+  display.style.display = 'block';
+  display.style.fontSize = '26px';
+  display.style.color = 'var(--yellow)';
+  display.textContent = remaining + ' s';
+  btn.disabled = true;
+
+  _blindTimerInterval = setInterval(() => {
+    remaining--;
+    if (remaining > 0) {
+      display.textContent = remaining + ' s';
+    } else {
+      clearInterval(_blindTimerInterval);
+      _blindTimerInterval = null;
+      display.style.fontSize = '12px';
+      display.style.color = 'var(--green)';
+      display.textContent = '✓ 缓存已熔断 — 立即恢复权限并切回 App！';
+      btn.disabled = false;
+      btn.textContent = '⏱ 重新计时';
+      toast('12 秒到！立即恢复定位权限并切回 App', 'ok');
+      // Burst re-assert: send 7-param payload twice to pre-load CoreLocation's
+      // first wakeup read, before the device can re-acquire real hardware data.
+      _blindReholdBurst();
+    }
+  }, 1000);
+}
+
+async function _blindReholdBurst() {
+  const statusEl = document.getElementById('blind-rehold-status');
+  statusEl.style.display = 'block';
+  statusEl.style.color = 'var(--dim)';
+  statusEl.style.borderColor = 'var(--border)';
+  statusEl.textContent = '后台补发 7 参数 Payload…';
+
+  let sent = 0;
+  for (let i = 0; i < 2; i++) {
+    if (i > 0) await new Promise(r => setTimeout(r, 1000));
+    try {
+      const r = await fetch('/api/teleport', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lat: currentLat, lon: currentLon, speed: 20 }),
+      });
+      const data = await r.json();
+      if (data.ok) sent++;
+    } catch (_) {}
+    statusEl.textContent = `补发 ${i + 1}/2…`;
+  }
+
+  if (sent > 0) {
+    statusEl.textContent = `已补发 ${sent}/2 次 ✓ — 切回 App 完成交互`;
+    statusEl.style.color = 'var(--green)';
+    statusEl.style.borderColor = 'var(--green)';
+  } else {
+    statusEl.textContent = '补发失败（Tunnel 未连接？）';
+    statusEl.style.color = 'var(--red)';
+    statusEl.style.borderColor = 'var(--red)';
+  }
+}
+
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 try {
   const saved = localStorage.getItem('pigmax-mode');
-  if (saved && SPEED_MODES[saved]) setMode(saved);
-} catch (_) {}
+  setMode(saved && SPEED_MODES[saved] ? saved : 'drive');
+} catch (_) { setMode('drive'); }
+try { setLibTab(localStorage.getItem('pigmax-lib-tab') || 'locs'); } catch (_) { setLibTab('locs'); }
 loadSaved();
+loadRoutes();
 loadPath();
+loadAdvParams();
 pollStatus();
 setInterval(pollStatus, 2000);
 </script>

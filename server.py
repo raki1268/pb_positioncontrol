@@ -5,8 +5,10 @@ Usage: sudo venv/bin/python3 server.py (run from project root)
 
 import json
 import math
+import os
 import re
 import signal
+import socket
 import subprocess
 import sys
 import threading
@@ -41,14 +43,24 @@ current_lon: float = -122.96817654417664
 
 # ── Route state ───────────────────────────────────────────────────────────────
 _route_queue:   list  = []      # remaining waypoints [(lat, lon), ...] after current segment
-_route_speed:   float = 4.5
+_route_speed:   float = 20.0
 _route_active:  bool  = False
+_route_name:    Optional[str] = None   # name of the saved route currently running
+_route_wps:     list  = []      # original waypoints of the running route (pre-lap-expansion)
+_route_laps:    int   = 1       # laps the running route was started with
 
 # ── Location hold ─────────────────────────────────────────────────────────────
 _PROJ_DIR = Path(__file__).parent.resolve()
 VENV_PY     = str(_PROJ_DIR / "venv" / "bin" / "python3")
 HOLD_SCRIPT = str(_PROJ_DIR / "hold_location.py")
 WALK_SCRIPT = str(_PROJ_DIR / "walk_location.py")
+
+# ── Advanced injection params ──────────────────────────────────────────────────
+# Applied to every hold/walk subprocess; falls back to basic 2-param if device
+# does not support the 7-param DVT selector.
+_adv_altitude: float = 0.0
+_adv_h_acc:    float = 5.0
+_adv_v_acc:    float = 5.0
 
 _hold_proc: Optional[subprocess.Popen] = None
 _hold_lat:  Optional[float] = None
@@ -101,7 +113,8 @@ def _launch_hold_proc(lat: float, lon: float) -> dict:
     reach_err = _check_rsd_reachable(rsd_host, rsd_port)
     if reach_err:
         return {"ok": False, "msg": reach_err}
-    cmd = [VENV_PY, HOLD_SCRIPT, rsd_host, str(rsd_port), str(lat), str(lon)]
+    cmd = [VENV_PY, HOLD_SCRIPT, rsd_host, str(rsd_port), str(lat), str(lon),
+           str(_adv_altitude), str(_adv_h_acc), str(_adv_v_acc), "0.0", "-1.0"]
     print(f"[hold] launching: {' '.join(cmd)}")
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                             text=True, bufsize=1)
@@ -163,7 +176,8 @@ def _launch_walk_segment(slat: float, slon: float, elat: float, elon: float, spe
 
     cmd = [VENV_PY, WALK_SCRIPT, rsd_host, str(rsd_port),
            str(slat), str(slon), str(elat), str(elon),
-           str(speed), "1.0", str(WALK_LAST_FILE)]
+           str(speed), "1.0", str(WALK_LAST_FILE),
+           str(_adv_altitude), str(_adv_h_acc), str(_adv_v_acc)]
     print(f"[walk] launching: {' '.join(cmd)}")
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                             text=True, bufsize=1)
@@ -223,7 +237,7 @@ def _watchdog_loop():
     sample walking path; restart dead holds."""
     global _tunnel_alive, _tunnel_last_check
     global current_lat, current_lon, _hold_lat, _hold_lon
-    global _route_active, _route_queue
+    global _route_active, _route_queue, _route_name, _route_wps, _route_laps
     while True:
         time.sleep(5)
 
@@ -247,6 +261,9 @@ def _watchdog_loop():
                     action = ('route_next', (last, next_wp))
                 else:
                     _route_active = False
+                    _route_name   = None
+                    _route_wps    = []
+                    _route_laps   = 1
                     _route_queue = []
                     _hold_lat, _hold_lon = last
                     action = ('recover', last)
@@ -263,6 +280,9 @@ def _watchdog_loop():
                         action = ('route_next', (arrived, next_wp))
                     else:
                         _route_active = False
+                        _route_name   = None
+                        _route_wps    = []
+                        _route_laps   = 1
                         _hold_lat, _hold_lon = arrived
                         action = ('hold_arrived', arrived)
                 else:
@@ -295,6 +315,9 @@ def _watchdog_loop():
                 print(f"[watchdog] route_next failed: {r['msg']} — stopping route")
                 with _lock:
                     _route_active = False
+                    _route_name   = None
+                    _route_wps    = []
+                    _route_laps   = 1
                     _route_queue = []
                     _hold_lat, _hold_lon = slat, slon
                 _launch_hold_proc(slat, slon)
@@ -444,6 +467,9 @@ def api_status():
             "route_active":    _route_active,
             "route_remaining": len(_route_queue),
             "route_speed":     _route_speed,
+            "route_name":      _route_name,
+            "route_wps":       list(_route_wps),
+            "route_laps":      _route_laps,
             "route_queue":     [{"lat": lat, "lon": lon} for lat, lon in _route_queue[:5]],
         }
 
@@ -517,7 +543,7 @@ def api_set_rsd(req: RsdReq):
 class LocReq(BaseModel):
     lat: float
     lon: float
-    speed: float = 4.5
+    speed: float = 20.0
 
 
 def _cancel_walk_state():
@@ -546,10 +572,13 @@ def _interp_pos() -> tuple:
 
 @app.post("/api/teleport")
 def api_teleport(req: LocReq):
-    global current_lat, current_lon, _route_active, _route_queue
+    global current_lat, current_lon, _route_active, _route_queue, _route_name, _route_wps, _route_laps
     with _lock:
         _cancel_walk_state()
         _route_active = False
+        _route_name   = None
+        _route_wps    = []
+        _route_laps   = 1
         _route_queue = []
     r = start_location_hold(req.lat, req.lon)
     if r["ok"]:
@@ -560,7 +589,7 @@ def api_teleport(req: LocReq):
 
 @app.post("/api/walk")
 def api_walk(req: LocReq):
-    global current_lat, current_lon, _route_active, _route_queue
+    global current_lat, current_lon, _route_active, _route_queue, _route_name, _route_wps, _route_laps
     if not (rsd_host and rsd_port):
         return {"ok": False, "msg": "Tunnel 未连接，请先填写 RSD HOST/PORT"}
     reach_err = _check_rsd_reachable(rsd_host, rsd_port)
@@ -572,6 +601,9 @@ def api_walk(req: LocReq):
         _cancel_walk_state()
         _kill_hold()
         _route_active = False
+        _route_name   = None
+        _route_wps    = []
+        _route_laps   = 1
         _route_queue = []
 
     result = _launch_walk_segment(slat, slon, req.lat, req.lon, req.speed)
@@ -583,11 +615,14 @@ def api_walk(req: LocReq):
 @app.post("/api/stop")
 def api_stop():
     """Stop walking at the interpolated current position."""
-    global current_lat, current_lon, _route_active, _route_queue
+    global current_lat, current_lon, _route_active, _route_queue, _route_name, _route_wps, _route_laps
     with _lock:
         lat, lon = _interp_pos()
         _cancel_walk_state()
         _route_active = False
+        _route_name   = None
+        _route_wps    = []
+        _route_laps   = 1
         _route_queue = []
         current_lat, current_lon = lat, lon
     _sample_path(lat, lon)
@@ -597,10 +632,13 @@ def api_stop():
 
 @app.post("/api/clear")
 def api_clear():
-    global _route_active, _route_queue
+    global _route_active, _route_queue, _route_name, _route_wps, _route_laps
     with _lock:
         _cancel_walk_state()
         _route_active = False
+        _route_name   = None
+        _route_wps    = []
+        _route_laps   = 1
         _route_queue = []
     stop_location_hold()
     return {"ok": True}
@@ -610,13 +648,14 @@ def api_clear():
 
 class RouteReq(BaseModel):
     waypoints: list   # [{"lat": float, "lon": float}, ...]
-    speed: float = 4.5
+    speed: float = 20.0
     laps: int = 1
+    name: Optional[str] = None   # saved-route name, shown while it runs
 
 
 @app.post("/api/route")
 def api_start_route(req: RouteReq):
-    global current_lat, current_lon, _route_queue, _route_speed, _route_active
+    global current_lat, current_lon, _route_queue, _route_speed, _route_active, _route_name, _route_wps, _route_laps
 
     if not (rsd_host and rsd_port):
         return {"ok": False, "msg": "Tunnel 未连接"}
@@ -641,6 +680,9 @@ def api_start_route(req: RouteReq):
         _route_queue  = list(expanded[1:])
         _route_speed  = req.speed
         _route_active = True
+        _route_name   = (req.name or None)
+        _route_wps    = [{"lat": lat, "lon": lon} for lat, lon in wps]
+        _route_laps   = max(1, int(req.laps))
 
     first = expanded[0]
     _sample_path(slat, slon)
@@ -648,6 +690,9 @@ def api_start_route(req: RouteReq):
     if not result["ok"]:
         with _lock:
             _route_active = False
+            _route_name   = None
+            _route_wps    = []
+            _route_laps   = 1
             _route_queue  = []
         return result
 
@@ -657,11 +702,14 @@ def api_start_route(req: RouteReq):
 
 @app.delete("/api/route")
 def api_cancel_route():
-    global _route_active, _route_queue, current_lat, current_lon
+    global _route_active, _route_queue, _route_name, _route_wps, _route_laps, current_lat, current_lon
     with _lock:
         lat, lon = _interp_pos()
         _cancel_walk_state()
         _route_active = False
+        _route_name   = None
+        _route_wps    = []
+        _route_laps   = 1
         _route_queue  = []
         current_lat, current_lon = lat, lon
     _sample_path(lat, lon)
@@ -672,11 +720,19 @@ def api_cancel_route():
 class RouteUpdateReq(BaseModel):
     speed: Optional[float] = None
     remove_idx: Optional[int] = None   # 0-based index into _route_queue
+    name: Optional[str] = None         # label the running route (saved mid-run)
 
 
 @app.patch("/api/route")
 def api_update_route(req: RouteUpdateReq):
-    global _route_speed, _route_queue, current_lat, current_lon
+    global _route_speed, _route_queue, current_lat, current_lon, _route_name
+
+    if req.name is not None:
+        with _lock:
+            if _route_active:
+                _route_name = req.name.strip() or None
+        if req.speed is None and req.remove_idx is None:
+            return {"ok": True, "name": _route_name}
 
     if req.remove_idx is not None:
         with _lock:
@@ -701,6 +757,28 @@ def api_update_route(req: RouteUpdateReq):
             result = _launch_walk_segment(slat, slon, target[0], target[1], req.speed)
             return result
 
+    return {"ok": True}
+
+
+# ── Advanced injection params API ─────────────────────────────────────────────
+
+class AdvParamsReq(BaseModel):
+    altitude:   float = 0.0
+    h_accuracy: float = 5.0
+    v_accuracy: float = 5.0
+
+
+@app.get("/api/advanced-params")
+def api_get_adv_params():
+    return {"altitude": _adv_altitude, "h_accuracy": _adv_h_acc, "v_accuracy": _adv_v_acc}
+
+
+@app.post("/api/advanced-params")
+def api_set_adv_params(req: AdvParamsReq):
+    global _adv_altitude, _adv_h_acc, _adv_v_acc
+    _adv_altitude = req.altitude
+    _adv_h_acc    = req.h_accuracy
+    _adv_v_acc    = req.v_accuracy
     return {"ok": True}
 
 
@@ -775,6 +853,100 @@ def api_move_saved(name: str, req: MoveReq):
     return {"ok": True}
 
 
+# ── Saved routes ──────────────────────────────────────────────────────────────
+
+ROUTES_FILE = Path(__file__).parent / "routes.json"
+
+
+def load_routes() -> list:
+    if ROUTES_FILE.exists():
+        try:
+            data = json.loads(ROUTES_FILE.read_text())
+            return data if isinstance(data, list) else []
+        except Exception:
+            return []
+    return []
+
+
+def save_routes(routes: list):
+    try:
+        ROUTES_FILE.write_text(json.dumps(routes, indent=2, ensure_ascii=False))
+    except Exception as e:
+        print(f"[routes] save failed: {e}")
+
+
+class SaveRouteReq(BaseModel):
+    name: str
+    waypoints: list          # [{"lat": float, "lon": float}, ...]
+    speed: float = 20.0
+    laps: int = 1
+    mode: Optional[str] = None   # 'walk' | 'drive' — restores the speed slider
+
+
+@app.get("/api/routes")
+def api_list_routes():
+    return load_routes()
+
+
+@app.post("/api/routes")
+def api_save_route(req: SaveRouteReq):
+    """Upsert a route by name (same semantics as saved locations)."""
+    name = req.name.strip()
+    if not name:
+        return {"ok": False, "msg": "路线名称不能为空"}
+    try:
+        wps = [{"lat": float(w["lat"]), "lon": float(w["lon"])} for w in req.waypoints]
+    except (KeyError, TypeError, ValueError) as e:
+        return {"ok": False, "msg": f"路线格式错误: {e}"}
+    if not wps:
+        return {"ok": False, "msg": "路线为空"}
+
+    routes = load_routes()
+    prev = next((r for r in routes if r.get("name") == name), None)
+    entry = {
+        "name":      name,
+        "waypoints": wps,
+        "speed":     float(req.speed),
+        "laps":      max(1, int(req.laps)),
+        "mode":      req.mode or (prev or {}).get("mode") or "walk",
+        "created":   (prev or {}).get("created", int(time.time())),
+        "updated":   int(time.time()),
+    }
+    routes = [r for r in routes if r.get("name") != name]
+    routes.append(entry)
+    save_routes(routes)
+    return {"ok": True, "replaced": prev is not None, "route": entry}
+
+
+class RenameRouteReq(BaseModel):
+    name: str
+
+
+@app.patch("/api/routes/{name}")
+def api_rename_route(name: str, req: RenameRouteReq):
+    new_name = req.name.strip()
+    if not new_name:
+        return {"ok": False, "msg": "路线名称不能为空"}
+    routes = load_routes()
+    target = next((r for r in routes if r.get("name") == name), None)
+    if target is None:
+        return {"ok": False, "msg": "路线不存在"}
+    if new_name != name and any(r.get("name") == new_name for r in routes):
+        return {"ok": False, "msg": "该名称已存在"}
+    target["name"] = new_name
+    target["updated"] = int(time.time())
+    save_routes(routes)
+    return {"ok": True}
+
+
+@app.delete("/api/routes/{name}")
+def api_del_route(name: str):
+    routes = load_routes()
+    remaining = [r for r in routes if r.get("name") != name]
+    save_routes(remaining)
+    return {"ok": True, "deleted": len(routes) - len(remaining)}
+
+
 # ── Static files ──────────────────────────────────────────────────────────────
 static_dir = Path(__file__).parent / "static"
 static_dir.mkdir(exist_ok=True)
@@ -793,6 +965,43 @@ def _cleanup(*_):
 signal.signal(signal.SIGINT, _cleanup)
 signal.signal(signal.SIGTERM, _cleanup)
 
+DEFAULT_PORT = 3000
+
+
+def _port_free(port: int) -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.bind(("127.0.0.1", port))
+            return True
+        except OSError:
+            return False
+
+
+def _pick_port() -> int:
+    """--port N > $PORT > 3000, then scan forward if that one is taken."""
+    wanted = None
+    if "--port" in sys.argv:
+        wanted = int(sys.argv[sys.argv.index("--port") + 1])
+    elif os.environ.get("PORT"):
+        wanted = int(os.environ["PORT"])
+
+    explicit = wanted is not None
+    port = wanted if explicit else DEFAULT_PORT
+    if _port_free(port):
+        return port
+    if explicit:
+        print(f"端口 {port} 已被占用，请换一个端口或先结束占用它的进程。")
+        sys.exit(1)
+
+    for candidate in range(port + 1, port + 51):
+        if _port_free(candidate):
+            print(f"⚠️  端口 {port} 已被占用，改用 {candidate}")
+            return candidate
+    print(f"{port}–{port + 50} 全部被占用，请用 --port 指定一个空闲端口。")
+    sys.exit(1)
+
+
 if __name__ == "__main__":
-    print("🌱  Pikmin Bloom Location UI  →  http://127.0.0.1:3000")
-    uvicorn.run(app, host="127.0.0.1", port=3000, log_level="warning")
+    port = _pick_port()
+    print(f"🌱  Pikmin Bloom Location UI  →  http://127.0.0.1:{port}")
+    uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
