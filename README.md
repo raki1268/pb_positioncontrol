@@ -65,7 +65,20 @@ cp locations.example.json locations.json
 
 ## 🎮 Usage
 
-### Terminal 1 — start the web server
+### One-click start (recommended)
+
+Double-click **`start.command`** in Finder (or run `./start.command`). It asks for
+your password once, starts the RSD tunnel and the web server, fills the RSD
+address into the page for you, and opens the browser. Closing the window (or
+Ctrl+C) stops both. You can skip the two-terminal steps below and step 2 in
+the browser.
+
+> First launch: if macOS blocks it, right-click → Open. To put a shortcut on the
+> Desktop, make an alias of the file (⌥⌘-drag) — a plain copy won't find the project.
+
+### Manual start
+
+#### Terminal 1 — start the web server
 
 ```bash
 sudo venv/bin/python3 server.py
@@ -81,7 +94,7 @@ set it inline):
 sudo venv/bin/python3 server.py --port 3100
 ```
 
-### Terminal 2 — start the RSD tunnel (required for iOS 17+)
+#### Terminal 2 — start the RSD tunnel (required for iOS 17+)
 
 ```bash
 sudo venv/bin/python3 -m pymobiledevice3 remote start-tunnel --connection-type usb
